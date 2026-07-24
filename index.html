@@ -8,58 +8,124 @@
 </head>
 <body>
 
-<aside class="sidebar">
-  <div class="sidebar-header">
-    <h1>Pirataria</h1>
-    <span class="sub">Body Art</span>
-    <div class="line"></div>
-  </div>
-  <nav class="sidebar-nav">
-    <a href="#" data-module="agenda" class="active">
-      <span class="nav-icon">&#9745;</span>
-      <span>Agenda</span>
-    </a>
-    <a href="#" data-module="clientes">
-      <span class="nav-icon">&#9787;</span>
-      <span>Clientes</span>
-    </a>
-    <a href="#" data-module="atendimento">
-      <span class="nav-icon">&#9881;</span>
-      <span>Atendimento</span>
-    </a>
-    <a href="#" data-module="studio">
-      <span class="nav-icon">&#9881;</span>
-      <span>Studio</span>
-    </a>
-  </nav>
-  <div class="sidebar-footer">Santo Antônio Além do Carmo, Salvador</div>
-</aside>
-
-<main class="content">
-  <header class="content-header">
-    <h2 id="moduleTitle">Agenda</h2>
-  </header>
-  <div id="moduleContent"></div>
-</main>
-
-<div class="overlay" id="overlay">
-  <div class="overlay-content">
-    <h3 id="overlayTitle"></h3>
-    <div id="overlayBody"></div>
-  </div>
-</div>
-
-<div class="panel-overlay" id="panelOverlay" onclick="if(event.target===this)App.closeClientPanel()">
-  <div class="slide-panel" id="slidePanel">
-    <div class="panel-header">
-      <h3 id="panelTitle">Cliente</h3>
-      <button class="btn btn-sm" onclick="App.closeClientPanel()">Fechar</button>
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="sidebar-header" style="border:none;text-align:center;padding:0 0 20px;">
+      <h1 style="font-family:var(--font-serif);">Pirataria</h1>
+      <span class="sub" style="display:block;font-size:0.65rem;color:var(--text-muted);letter-spacing:0.12em;text-transform:uppercase;">Body Art</span>
+      <div class="line" style="margin:10px auto 0;"></div>
     </div>
-    <div class="panel-body" id="panelBody"></div>
+    <div class="form-group"><label>Usuário</label><input type="text" id="loginUser" placeholder="Seu login" onkeydown="if(event.key==='Enter')App._doLogin()"></div>
+    <div class="form-group"><label>Senha</label><input type="password" id="loginPass" placeholder="Sua senha" onkeydown="if(event.key==='Enter')App._doLogin()"></div>
+    <div class="login-error" id="loginError"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px;" onclick="App._doLogin()">Entrar</button>
   </div>
 </div>
 
-<script src="db.js"></script>
-<script src="app.js"></script>
+<div id="appShell">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>Pirataria</h1>
+      <span class="sub">Body Art</span>
+      <div class="line"></div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" data-module="agenda" class="active"><span class="nav-icon">&#9745;</span><span>Agenda</span></a>
+      <a href="#" data-module="clientes"><span class="nav-icon">&#9787;</span><span>Clientes</span></a>
+      <a href="#" data-module="atendimento"><span class="nav-icon">&#9881;</span><span>Atendimento</span></a>
+      <a href="#" data-module="financeiro"><span class="nav-icon">&#9733;</span><span>Financeiro</span></a>
+      <a href="#" data-module="os"><span class="nav-icon">&#9744;</span><span>Ordens de Serviço</span></a>
+      <a href="#" data-module="termos"><span class="nav-icon">&#9744;</span><span>Termos</span></a>
+      <a href="#" data-module="lembretes"><span class="nav-icon">&#9744;</span><span>Lembretes</span></a>
+      <a href="#" data-module="comissoes"><span class="nav-icon">&#9744;</span><span>Comissões</span></a>
+      <a href="#" data-module="vales"><span class="nav-icon">&#9744;</span><span>Vales</span></a>
+      <a href="#" data-module="pacotes"><span class="nav-icon">&#9744;</span><span>Pacotes</span></a>
+      <a href="#" data-module="estoque"><span class="nav-icon">&#9744;</span><span>Estoque</span></a>
+      <a href="#" data-module="relatorios"><span class="nav-icon">&#9733;</span><span>Relatórios</span></a>
+      <a href="#" data-module="studio"><span class="nav-icon">&#9881;</span><span>Studio</span></a>
+    </nav>
+    <div class="sidebar-footer" style="display:flex;flex-direction:column;gap:4px;">
+      <button class="btn btn-sm" id="logoutBtn" onclick="App._doLogout()" style="font-size:0.65rem;padding:3px 8px;color:var(--text-dim);border-color:var(--border);">Sair</button>
+      <span style="font-size:0.55rem;">Santo Antônio Além do Carmo</span>
+    </div>
+  </aside>
+
+  <main class="content">
+    <header class="content-header">
+      <h2 id="moduleTitle">Agenda</h2>
+      <div class="global-search-wrap">
+        <input type="text" id="globalSearch" placeholder="Buscar..." oninput="App._onGlobalSearch()" autocomplete="off">
+        <div id="searchPanel" class="search-panel"></div>
+      </div>
+    </header>
+    <div id="moduleContent"></div>
+  </main>
+
+  <div class="overlay" id="overlay">
+    <div class="overlay-content">
+      <h3 id="overlayTitle"></h3>
+      <div id="overlayBody"></div>
+    </div>
+  </div>
+
+  <div id="toastContainer"></div>
+
+  <div class="panel-overlay" id="panelOverlay" onclick="if(event.target===this)App.closeClientPanel()">
+    <div class="slide-panel" id="slidePanel">
+      <div class="panel-header">
+        <h3 id="panelTitle">Cliente</h3>
+        <button class="btn btn-sm" onclick="App.closeClientPanel()">Fechar</button>
+      </div>
+      <div class="panel-body" id="panelBody"></div>
+    </div>
+  </div>
+</div>
+
+<script src="src/constants.js"></script>
+<script src="src/db.js"></script>
+<script src="src/utils/dom.js"></script>
+<script src="src/components/index.js"></script>
+<script src="src/components/emptyState.js"></script>
+<script src="src/components/badge.js"></script>
+<script src="src/components/modal.js"></script>
+<script src="src/components/table.js"></script>
+<script src="src/components/card.js"></script>
+<script src="src/repositories/index.js"></script>
+<script src="src/repositories/clientesRepository.js"></script>
+<script src="src/repositories/agendaRepository.js"></script>
+<script src="src/repositories/atendimentoRepository.js"></script>
+<script src="src/repositories/produtosRepository.js"></script>
+<script src="src/repositories/financeiroRepository.js"></script>
+<script src="src/repositories/studioRepository.js"></script>
+<script src="src/utils/validation.js"></script>
+<script src="src/utils/toast.js"></script>
+<script src="src/utils/metrics.js"></script>
+<script src="src/utils/search.js"></script>
+<script src="src/utils/reports.js"></script>
+<script src="src/utils/inventory.js"></script>
+<script src="src/utils/finance.js"></script>
+<script src="src/utils/events.js"></script>
+<script src="src/utils/attachments.js"></script>
+<script src="src/utils/audit.js"></script>
+<script src="src/utils/permissions.js"></script>
+<script src="src/utils/auth.js"></script>
+<script src="src/utils/clientMetrics.js"></script>
+<script src="src/utils/migrations.js"></script>
+<script src="src/utils/backup.js"></script>
+<script src="src/router.js"></script>
+<script src="src/modules/agenda.js"></script>
+<script src="src/modules/clientes.js"></script>
+<script src="src/modules/atendimento.js"></script>
+<script src="src/modules/financeiro.js"></script>
+<script src="src/modules/os.js"></script>
+<script src="src/modules/termos.js"></script>
+<script src="src/modules/lembretes.js"></script>
+<script src="src/modules/comissoes.js"></script>
+<script src="src/modules/vales.js"></script>
+<script src="src/modules/pacotes.js"></script>
+<script src="src/modules/estoque.js"></script>
+<script src="src/modules/relatorios.js"></script>
+<script src="src/modules/studio.js"></script>
+<script src="src/app.js"></script>
 </body>
 </html>
