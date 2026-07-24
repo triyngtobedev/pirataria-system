@@ -1,0 +1,11 @@
+{
+  "name": "pirataria-system",
+  "version": "1.0.0",
+  "description": "Sistema de gestão para Pirataria Body Art",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "dependencies": {
+    "serve": "^14.2.0"
+  }
+}

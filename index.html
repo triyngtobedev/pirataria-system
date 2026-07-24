@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pirataria Body Art — Sistema</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h1>Pirataria</h1>
+    <span class="sub">Body Art</span>
+    <div class="line"></div>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="#" data-module="agenda" class="active">
+      <span class="nav-icon">&#9745;</span>
+      <span>Agenda</span>
+    </a>
+    <a href="#" data-module="clientes">
+      <span class="nav-icon">&#9787;</span>
+      <span>Clientes</span>
+    </a>
+    <a href="#" data-module="atendimento">
+      <span class="nav-icon">&#9881;</span>
+      <span>Atendimento</span>
+    </a>
+    <a href="#" data-module="studio">
+      <span class="nav-icon">&#9881;</span>
+      <span>Studio</span>
+    </a>
+  </nav>
+  <div class="sidebar-footer">Santo Antônio Além do Carmo, Salvador</div>
+</aside>
+
+<main class="content">
+  <header class="content-header">
+    <h2 id="moduleTitle">Agenda</h2>
+  </header>
+  <div id="moduleContent"></div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-content">
+    <h3 id="overlayTitle"></h3>
+    <div id="overlayBody"></div>
+  </div>
+</div>
+
+<div class="panel-overlay" id="panelOverlay" onclick="if(event.target===this)App.closeClientPanel()">
+  <div class="slide-panel" id="slidePanel">
+    <div class="panel-header">
+      <h3 id="panelTitle">Cliente</h3>
+      <button class="btn btn-sm" onclick="App.closeClientPanel()">Fechar</button>
+    </div>
+    <div class="panel-body" id="panelBody"></div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
