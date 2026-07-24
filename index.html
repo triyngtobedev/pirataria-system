@@ -4,16 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pirataria Body Art — Sistema</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="login-overlay" id="loginOverlay">
   <div class="login-box">
-    <div class="sidebar-header" style="border:none;text-align:center;padding:0 0 20px;">
-      <h1 style="font-family:var(--font-serif);">Pirataria</h1>
-      <span class="sub" style="display:block;font-size:0.65rem;color:var(--text-muted);letter-spacing:0.12em;text-transform:uppercase;">Body Art</span>
-      <div class="line" style="margin:10px auto 0;"></div>
+    <div class="login-brand">
+      <img src="assets/logo.svg" alt="Pirataria Body Art" class="login-logo">
     </div>
     <div class="form-group"><label>Usuário</label><input type="text" id="loginUser" placeholder="Seu login" onkeydown="if(event.key==='Enter')App._doLogin()"></div>
     <div class="form-group"><label>Senha</label><input type="password" id="loginPass" placeholder="Sua senha" onkeydown="if(event.key==='Enter')App._doLogin()"></div>
@@ -25,9 +24,7 @@
 <div id="appShell">
   <aside class="sidebar">
     <div class="sidebar-header">
-      <h1>Pirataria</h1>
-      <span class="sub">Body Art</span>
-      <div class="line"></div>
+      <img src="assets/logo.svg" alt="Pirataria Body Art" class="sidebar-logo">
     </div>
     <nav class="sidebar-nav">
       <a href="#" data-module="agenda" class="active"><span class="nav-icon">&#9745;</span><span>Agenda</span></a>
