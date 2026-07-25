@@ -26,6 +26,7 @@ const App = {
     this._applyPermissions();
     this.bindNav();
     if (typeof Notificacao !== 'undefined') Notificacao._updateBadge();
+    this._updateVersionDisplay();
     this.navigate(this._getDefaultModule());
     var self = this;
     if (this._isFirstAccess) {
@@ -34,6 +35,45 @@ const App = {
       }, 600);
     }
     this._isFirstAccess = false;
+  },
+
+  _updateVersionDisplay() {
+    var el = document.getElementById('versionHash');
+    if (!el) return;
+    try {
+      var ver = document.querySelector('meta[name="version"]');
+      if (ver) el.textContent = 'v' + (ver.getAttribute('content') || '1.0.0');
+    } catch(e) {}
+  },
+
+  _showDiagnostics() {
+    var ver = '1.0.0';
+    try { var m = document.querySelector('meta[name="version"]'); if (m) ver = m.getAttribute('content') || ver; } catch(e) {}
+    var swStatus = 'serviceWorker' in navigator ? (navigator.serviceWorker.controller ? 'Ativo' : 'Registrado') : 'N\u00e3o suportado';
+    var storage = '';
+    try {
+      if (navigator.storage && navigator.storage.estimate) {
+        navigator.storage.estimate().then(function(e) {
+          var usado = (e.usage / 1024 / 1024).toFixed(1);
+          var total = (e.quota / 1024 / 1024).toFixed(1);
+          document.getElementById('diagStorage').textContent = usado + ' MB de ' + total + ' MB usados';
+        });
+        storage = 'Consultando...';
+      } else {
+        storage = 'Indispon\u00edvel';
+      }
+    } catch(e) { storage = 'Erro'; }
+
+    var html = '<div class="os-detail">' +
+      '<div class="os-detail-row"><span class="os-detail-label">Vers\u00e3o</span><span class="os-detail-value">' + ver + '</span></div>' +
+      '<div class="os-detail-row"><span class="os-detail-label">Ambiente</span><span class="os-detail-value">' + (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'Desenvolvimento' : 'Produ\u00e7\u00e3o') + '</span></div>' +
+      '<div class="os-detail-row"><span class="os-detail-label">Service Worker</span><span class="os-detail-value">' + swStatus + '</span></div>' +
+      '<div class="os-detail-row"><span class="os-detail-label">Armazenamento</span><span class="os-detail-value" id="diagStorage">' + storage + '</span></div>' +
+      '<div class="os-detail-row"><span class="os-detail-label">Navegador</span><span class="os-detail-value">' + (navigator.userAgent || '').substring(0, 80) + '</span></div>' +
+      '<div class="os-detail-row"><span class="os-detail-label">M\u00f3dulos</span><span class="os-detail-value">' + Object.keys(MODULE_TITLES).length + ' registrados</span></div>' +
+      '<div class="os-detail-row"><span class="os-detail-label">Armazenamento local</span><span class="os-detail-value">' + (typeof localStorage !== 'undefined' ? Object.keys(localStorage).filter(function(k) { return k.startsWith('pirataria_'); }).length + ' cole\u00e7\u00f5es' : 'Indispon\u00edvel') + '</span></div>' +
+    '</div>';
+    this._showOverlay('Diagn\u00f3stico do Sistema', html);
   },
 
   _applyPermissions() {

@@ -3,8 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#b91c1c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Pirataria Body Art — Sistema</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="favicon.svg">
+  <meta name="version" content="1.0.0">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -70,7 +76,7 @@
     </nav>
     <div class="sidebar-footer">
       <button class="btn btn-sm" id="logoutBtn" onclick="App._doLogout()">Sair</button>
-      <span class="sidebar-version">Pirataria System v1.0</span>
+      <span class="sidebar-version" id="versionDisplay" onclick="App._showDiagnostics()" style="cursor:pointer;" title="Clique para diagnóstico">Pirataria System <span id="versionHash">v1.0.0</span></span>
       <span class="sidebar-address">Santo Antônio Além do Carmo, Salvador</span>
     </div>
   </aside>
@@ -181,5 +187,13 @@
 <script src="src/modules/oportunidades.js"></script>
 <script src="src/modules/filas.js"></script>
 <script src="src/app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').catch(function() {});
+  });
+}
+</script>
+<div id="appVersion" style="display:none;">1.0.0</div>
 </body>
 </html>
