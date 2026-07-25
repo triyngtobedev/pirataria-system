@@ -2,13 +2,14 @@
   "name": "Pirataria Body Art — Sistema",
   "short_name": "Body Art OS",
   "description": "Sistema de gestão para estúdios de body piercing e tatuagem",
-  "start_url": "/",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#b91c1c",
   "orientation": "any",
   "categories": ["business", "productivity"],
   "icons": [
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }
