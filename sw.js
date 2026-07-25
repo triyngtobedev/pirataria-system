@@ -44,6 +44,7 @@ const ASSETS = [
   '/src/utils/fila.js',
   '/src/utils/priorizacao.js',
   '/src/utils/executor.js',
+  '/src/utils/copiloto.js',
   '/src/utils/recomendacoes.js',
   '/src/utils/onboarding.js',
   '/src/modules/onboarding.js',

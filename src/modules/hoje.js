@@ -64,6 +64,26 @@ App._renderHojeAtual = function() {
       // Topbar
       this._renderTopbar(dados) +
 
+      // Copiloto Operacional
+      (function() {
+        var acoes = Copiloto.collect();
+        if (acoes.length === 0) return '';
+        return '<div class="hj-bloco">' +
+          C.sectionHeader('Copiloto Operacional', '<span class="hj-contador">' + acoes.length + '</span>') +
+          '<div style="display:flex;flex-wrap:wrap;gap:6px;">' +
+          acoes.map(function(a) {
+            var scoreCls = a.score >= 85 ? 'rp-card-red' : a.score >= 65 ? 'rp-card-yellow' : '';
+            var onClick = "Executor.executar('" + a.tipo + "', {})";
+            return '<div class="rp-card ' + scoreCls + '" style="flex:1;min-width:130px;padding:10px 12px;text-align:center;cursor:pointer;" onclick="' + onClick + '">' +
+              '<div style="font-size:1.1rem;font-weight:700;line-height:1.2;">' + a.quantidade + '</div>' +
+              '<div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-text-muted);margin:2px 0;">' + a.categoria + '</div>' +
+              '<div style="font-size:0.55rem;color:var(--color-text-dim);">' + a.motivo.substring(0, 30) + '</div>' +
+            '</div>';
+          }).join('') +
+          '</div>' +
+        '</div>';
+      })() +
+
       // Plano do Dia (AI Hub)
       '<div class="hj-resumo" style="border-left:3px solid var(--gold);">' +
         '<div style="display:flex;flex-wrap:wrap;gap:8px;width:100%;">' +
