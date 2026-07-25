@@ -1,595 +1,163 @@
-App._hojeFilter = 'tudo';
-App._hojeData = null;
-App._expandedCards = {};
-
 App.refreshHoje = function() {
   if (this.currentModule === 'hoje') this.renderHoje();
 };
 
 App.renderHoje = function() {
-  this._hojeData = Hoje.collect();
-  this._hojeFilter = 'tudo';
-  this._expandedCards = {};
-  this._renderHojeAtual();
-};
-
-App._hojeTaskFilter = 'tudo';
-
-App._renderHojeAtual = function() {
-  var dados = this._hojeData;
   var hoje = DB._today();
-  var rCom = Comunicacao.getResumoOperacional();
 
-  // Task Queue
   var tasks = Hoje.collectTasks();
-  var tasksFiltradas = tasks;
-  if (this._hojeTaskFilter === 'criticos') tasksFiltradas = tasks.filter(function(t) { return t.prioridade <= 0; });
-  else if (this._hojeTaskFilter === 'hoje') tasksFiltradas = tasks.filter(function(t) { return t.origem === 'agenda' || t.origem === 'confirmacao'; });
-  else if (this._hojeTaskFilter === 'pendentes') tasksFiltradas = tasks.filter(function(t) { return t.prioridade <= 2; });
-  else if (this._hojeTaskFilter === 'concluidos') tasksFiltradas = [];
-
-  // Coletar dados para as seções
-  var conversasSemResp = DB.getConversas().filter(function(c) { return c.status !== 'encerrada' && c.status === 'aguardando_estudio'; });
+  var wpp = typeof Inbox.collectWhatsApp === 'function' ? Inbox.collectWhatsApp() : [];
+  var confirmacoes = typeof Confirmacao.collect === 'function' ? Confirmacao.collect() : [];
   var agendaHoje = DB.getAppointmentsByDate(hoje).filter(function(a) { return a.status !== 'cancelled'; });
-  var inProgress = agendaHoje.filter(function(a) { return a.status === 'in_progress'; });
-  var pending = agendaHoje.filter(function(a) { return a.status === 'pending'; });
-  var confirmed = agendaHoje.filter(function(a) { return a.status === 'confirmed'; });
-  var igData = Marketing.collectInstagram();
-  var igHoje = igData.items.filter(function(i) { return i.isToday && i.statusCalc !== 'publicado'; });
-  var igAtrasados = igData.items.filter(function(i) { return i.isOverdue; });
+  var copAcoes = typeof Copiloto.collect === 'function' ? Copiloto.collect() : [];
+  var acoesFila = typeof AcoesPrioritarias !== 'undefined' ? AcoesPrioritarias.getFila() : [];
+  var gargalos = typeof GargalosOperacionais !== 'undefined' ? GargalosOperacionais.getSugestoes() : [];
+  var opQueue = typeof Operador !== 'undefined' ? Operador.getQueue() : [];
+  var ultimosEventos = typeof EventTimeline !== 'undefined' ? EventTimeline.last(8) : [];
 
-  var concluidos = agendaHoje.filter(function(a) { return a.status === 'completed'; }).length;
-  var totalPend = rCom.totalPendencias;
-  var progresso = Math.min(100, Math.round((concluidos / Math.max(agendaHoje.length, 1)) * 50 + (totalPend === 0 ? 50 : Math.max(0, 50 - totalPend * 5))));
+  var aguardandoResposta = wpp.filter(function(c) { return c.status === 'aguardando_estudio'; }).length;
+  var confirmacoesPendentes = confirmacoes.filter(function(c) { return c.statusConfirmacao === 'pendente'; });
+  var pagamentosPendentes = agendaHoje.filter(function(a) { return a.status === 'completed' && a.value; });
+  var tarefasCriticas = acoesFila.filter(function(a) { return a.prioridade === 'Critico' && a.status === 'pendente'; });
+  var gargalosCriticos = gargalos.filter(function(g) { return g.prioridade === 'Critico'; });
+  var alertasOp = opQueue.filter(function(o) { return o.urgencia <= 0; });
 
-  // AI Hub - Plano do Dia
-  var plano = AIHub.collect().filter(function(i) { return i.prioridade <= 1; });
-  var primeiraTarefa = plano.length > 0 ? plano[0].titulo : 'Nenhuma prioridade cr\u00edtica';
-  var maiorPrioridade = plano.length > 0 ? plano[0].categoria : 'Tudo em ordem';
-  var principalRisco = plano.filter(function(i) { return i.tipo === 'alerta'; }).length > 0 ? plano.filter(function(i) { return i.tipo === 'alerta'; })[0].titulo : 'Nenhum risco identificado';
-  var proxPub = igHoje.length > 0 ? igHoje[0].titulo + ' (' + igHoje[0].perfilDestino + ')' : 'Nenhuma';
-  var proxAgenda = agendaHoje.length > 0 ? agendaHoje[0].clientName + ' \u00e0s ' + agendaHoje[0].time : 'Nenhum';
-  var qtdConversas = conversasSemResp.length;
-  var gcStatus = GoogleCalendar.getSyncStatus();
-  var gcAlerta = !gcStatus.connected ? 'GC n\u00e3o conectado' : gcStatus.falha ? 'Falha GC' : '';
-  var fluxoAgendamento = 0;
-  var conversasAtivas = DB.getConversas().filter(function(c) { return c.status !== 'encerrada'; });
-  for (var fc = 0; fc < conversasAtivas.length; fc++) {
-    var est = AgendamentoAssistente.getEstadoFluxo(conversasAtivas[fc].id);
-    if (est > 0 && est < 4) fluxoAgendamento++;
-  }
+  var html = '<div class="dash-wrap">';
 
-  document.getElementById('moduleContent').innerHTML =
-    '<div class="hj-wrap">' +
-      // Topbar
-      this._renderTopbar(dados) +
-
-      // Copiloto Operacional
-      (function() {
-        var acoes = Copiloto.collect();
-        if (acoes.length === 0) return '';
-        return '<div class="hj-bloco">' +
-          C.sectionHeader('Copiloto Operacional', '<span class="hj-contador">' + acoes.length + '</span>') +
-          '<div style="display:flex;flex-wrap:wrap;gap:6px;">' +
-          acoes.map(function(a) {
-            var scoreCls = a.score >= 85 ? 'rp-card-red' : a.score >= 65 ? 'rp-card-yellow' : '';
-            var onClick = "Executor.executar('" + a.tipo + "', {})";
-            return '<div class="rp-card ' + scoreCls + '" style="flex:1;min-width:130px;padding:10px 12px;text-align:center;cursor:pointer;" onclick="' + onClick + '">' +
-              '<div style="font-size:1.1rem;font-weight:700;line-height:1.2;">' + a.quantidade + '</div>' +
-              '<div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-text-muted);margin:2px 0;">' + a.categoria + '</div>' +
-              '<div style="font-size:0.55rem;color:var(--color-text-dim);">' + a.motivo.substring(0, 30) + '</div>' +
-            '</div>';
-          }).join('') +
-          '</div>' +
-        '</div>';
-      })() +
-
-      // Plano do Dia (AI Hub)
-      '<div class="hj-resumo" style="border-left:3px solid var(--gold);">' +
-        '<div style="display:flex;flex-wrap:wrap;gap:8px;width:100%;">' +
-          '<div class="hj-resumo-item" style="flex:0 0 auto;min-width:auto;padding-right:12px;border-right:1px solid var(--border-light);"><span class="hj-resumo-lbl" style="font-size:0.6rem;">Primeira tarefa</span><span class="hj-resumo-val" style="font-size:0.85rem;">' + App._esc(primeiraTarefa) + '</span></div>' +
-          '<div class="hj-resumo-item" style="flex:0 0 auto;min-width:auto;padding-right:12px;border-right:1px solid var(--border-light);"><span class="hj-resumo-lbl" style="font-size:0.6rem;">Prioridade</span><span class="hj-resumo-val" style="font-size:0.85rem;">' + App._esc(maiorPrioridade) + '</span></div>' +
-          '<div class="hj-resumo-item" style="flex:0 0 auto;min-width:auto;padding-right:12px;border-right:1px solid var(--border-light);"><span class="hj-resumo-lbl" style="font-size:0.6rem;">Risco</span><span class="hj-resumo-val" style="font-size:0.85rem;color:var(--accent-hover);">' + App._esc(principalRisco) + '</span></div>' +
-          '<div class="hj-resumo-item" style="flex:0 0 auto;min-width:auto;padding-right:12px;border-right:1px solid var(--border-light);"><span class="hj-resumo-lbl" style="font-size:0.6rem;">Pr\u00f3x. publica\u00e7\u00e3o</span><span class="hj-resumo-val" style="font-size:0.85rem;">' + App._esc(proxPub) + '</span></div>' +
-          '<div class="hj-resumo-item" style="flex:0 0 auto;min-width:auto;padding-right:12px;border-right:1px solid var(--border-light);"><span class="hj-resumo-lbl" style="font-size:0.6rem;">Pr\u00f3x. agenda</span><span class="hj-resumo-val" style="font-size:0.85rem;">' + App._esc(proxAgenda) + '</span></div>' +
-          '<div class="hj-resumo-item" style="flex:0 0 auto;min-width:auto;"><span class="hj-resumo-lbl" style="font-size:0.6rem;">WhatsApp</span><span class="hj-resumo-val" style="font-size:0.85rem;">' + qtdConversas + ' pendente' + (qtdConversas !== 1 ? 's' : '') + '</span></div>' +
-        '</div>' +
+  // Bloco 1: Prioridade Agora
+  html += '<div class="dash-bloco dash-prioridade">';
+  if (tasks.length > 0) {
+    var top = tasks[0];
+    var prioCls = top.score >= 85 ? 'dash-critico' : top.score >= 65 ? 'dash-alto' : 'dash-medio';
+    html += '<div class="dash-prio-header">\u26A0 Prioridade Agora</div>' +
+      '<div class="dash-prio-card ' + prioCls + '">' +
+      '<div class="dash-prio-score">' + top.score + '</div>' +
+      '<div class="dash-prio-body">' +
+      '<div class="dash-prio-titulo">' + App._esc(top.clientName || '') + (top.clientName ? ' \u2014 ' : '') + App._esc(top.descricao) + '</div>' +
+      '<div class="dash-prio-origem">' + App._esc(top.origem) + ' \u2022 ' + (top.horario || '') + '</div>' +
+      '<div class="dash-prio-motivos">' + top.motivos.slice(0, 2).map(function(m) { return '<span class="badge badge-scheduled" style="font-size:0.5rem;padding:1px 4px;">' + App._esc(m) + '</span>'; }).join('') + '</div>' +
       '</div>' +
-
-      // Recomendações da IA
-      (function() {
-        var recs = Recomendacoes.collect();
-        if (recs.length === 0) return '';
-        return '<div class="hj-bloco">' +
-          C.sectionHeader('Recomenda\u00e7\u00f5es da IA', '<span class="hj-contador">' + recs.length + '</span>') +
-          '<div class="hj-card-list">' +
-          recs.slice(0, 4).map(function(r) {
-            var scoreCls = r.score >= 85 ? 'hj-card-urg' : r.score >= 65 ? 'hj-card-warn' : '';
-            var onClick = r.tipo ? "Executor.executar('" + r.tipo + "', " + JSON.stringify(r.payload || {}).replace(/'/g, "\\'") + ")" : "App.navigate('aihub')";
-            return '<div class="hj-card ' + scoreCls + '"><div class="hj-card-main"><div class="hj-card-avatar" style="font-size:0.9rem;background:var(--accent-dim);color:var(--accent-hover);">AI</div><div class="hj-card-body"><div class="hj-card-title">' +
-              App._esc(r.titulo) + ' <span style="font-size:0.6rem;color:var(--text-dim);">Score ' + r.score + '</span></div>' +
-              '<div class="hj-card-desc">' + App._esc(r.motivo) + '</div>' +
-              '<div style="font-size:0.68rem;color:var(--gold);margin-top:2px;">' + App._esc(r.impacto) + '</div></div>' +
-              '<div class="hj-card-actions"><button class="btn btn-primary btn-sm hj-card-btn" onclick="' + onClick + '">' + App._esc(r.acaoLabel) + '</button></div></div></div>';
-          }).join('') +
-          '</div>' +
-          (recs.length > 4 ? '<div class="hj-mais" onclick="App.navigate(\'aihub\')">Ver todas (+' + (recs.length - 4) + ')</div>' : '') +
-        '</div>';
-      })() +
-
-      // Google Calendar alert
-      (gcAlerta ? '<div class="hj-notif-resumo hj-notif-critico" onclick="App.navigate(\'studio\')" style="cursor:pointer;margin-bottom:12px;"><span class="hj-notif-icon">&#128197;</span><span class="hj-notif-text"><strong>' + gcAlerta + '</strong></span><span class="hj-notif-btn">Configurar</span></div>' : '') +
-
-      // Fila Única de Tarefas
-      '<div class="hj-bloco">' +
-        C.sectionHeader('Fila \u00danica de Tarefas',
-          '<span style="font-size:0.72rem;color:var(--text-muted);display:flex;gap:6px;align-items:center;">' +
-            '<span class="hj-chip ' + (this._hojeTaskFilter === 'tudo' ? 'hj-chip-active' : '') + '" onclick="App._hojeTaskFilter=\'tudo\';App._renderHojeAtual();" style="font-size:0.6rem;padding:2px 8px;cursor:pointer;">Todas</span>' +
-            '<span class="hj-chip ' + (this._hojeTaskFilter === 'criticos' ? 'hj-chip-active' : '') + '" onclick="App._hojeTaskFilter=\'criticos\';App._renderHojeAtual();" style="font-size:0.6rem;padding:2px 8px;cursor:pointer;">Cr\u00edticas</span>' +
-            '<span class="hj-chip ' + (this._hojeTaskFilter === 'hoje' ? 'hj-chip-active' : '') + '" onclick="App._hojeTaskFilter=\'hoje\';App._renderHojeAtual();" style="font-size:0.6rem;padding:2px 8px;cursor:pointer;">Hoje</span>' +
-            '<span class="hj-chip ' + (this._hojeTaskFilter === 'pendentes' ? 'hj-chip-active' : '') + '" onclick="App._hojeTaskFilter=\'pendentes\';App._renderHojeAtual();" style="font-size:0.6rem;padding:2px 8px;cursor:pointer;">Pendentes</span>' +
-            '<span class="hj-contador">' + tasks.length + '</span>' +
-          '</span>') +
-          (tasksFiltradas.length === 0
-          ? L.empty('Nenhuma tarefa pendente', 'Tudo resolvido por aqui!', 'bell')
-          : '<div class="hj-card-list">' + tasksFiltradas.slice(0, 10).map(function(t) {
-            var scoreCls = t.score >= 85 ? 'badge-cancelled' : t.score >= 65 ? 'badge-progress' : t.score >= 40 ? 'badge-scheduled' : 'badge-waiting';
-            var origemLabels = { confirmacao: '\u2705', whatsapp: '\uD83D\uDCAC', agendamento: '\uD83D\uDCC5', crm: '\uD83D\uDC64', oportunidade: '\u2728', agenda: '\uD83D\uDCCB', financeiro: '\uD83D\uDCB0', posatendimento: '\uD83C\uDFE5', notificacao: '\uD83D\uDD14' };
-            var icon = origemLabels[t.origem] || '\u2022';
-            var onClick = t.origem && t.id ? "Executor.executar('" + t.origem + "', {})" : "App.navigate('filas')";
-            return '<div class="hj-card" style="cursor:pointer;"><div class="hj-card-main"><div class="hj-card-avatar" style="font-size:1rem;background:transparent;">' + icon + '</div><div class="hj-card-body"><div class="hj-card-title">' +
-              App._esc(t.clientName || t.descricao) + ' <span class="badge ' + scoreCls + '" style="font-size:0.55rem;">' + t.prioridadeLabel + '</span> <span style="font-size:0.55rem;color:var(--text-dim);">Score ' + t.score + '</span></div>' +
-              '<div class="hj-card-desc">' + App._esc(t.descricao) + (t.horario ? ' \u2022 ' + t.horario : '') + '</div>' +
-              (t.motivos && t.motivos.length > 0 ? '<div style="margin-top:3px;display:flex;flex-wrap:wrap;gap:3px;">' + t.motivos.map(function(m) { return '<span class="badge badge-scheduled" style="font-size:0.5rem;padding:1px 4px;">' + App._esc(m) + '</span>'; }).join('') + '</div>' : '') +
-              '</div>' +
-              '<div class="hj-card-actions"><button class="btn btn-primary btn-sm hj-card-btn" onclick="' + onClick + '">' + App._esc(t.acaoLabel) + '</button></div></div></div>';
-          }).join('') + '</div>') +
-        (tasksFiltradas.length > 10 ? '<div class="hj-mais" onclick="App.navigate(\'filas\')">Ver todas (+' + (tasksFiltradas.length - 10) + ')</div>' : '') +
-      '</div>' +
-
-      // Seção 1: Responder WhatsApp
-      '<div class="hj-bloco">' +
-        C.sectionHeader('1. Responder WhatsApp', '<span class="hj-contador">' + conversasSemResp.length + '</span>') +
-        (conversasSemResp.length === 0
-          ? L.empty('Todas as conversas respondidas', 'Nenhuma mensagem aguardando resposta.', 'bell')
-          : '<div class="hj-card-list">' + conversasSemResp.slice(0, 5).map(function(c) {
-            return '<div class="hj-card hj-card-urg" style="cursor:pointer;" onclick="App.navigate(\'inbox\')"><div class="hj-card-main"><div class="hj-card-avatar">' + App._iniciais(c.clientName) + '</div><div class="hj-card-body"><div class="hj-card-title">' + App._esc(c.clientName) + '</div><div class="hj-card-desc">' + (Inbox.ORIGEM_LABELS[c.origin] || c.origin) + ' \u2022 ' + App._tempoRelativo(c.ultimaInteracao) + (c.priority === 'high' ? ' \u2022 Prioridade alta' : '') + '</div></div><div class="hj-card-actions"><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();App.navigate(\'inbox\')">Responder</button></div></div></div>';
-          }).join('') + '</div>') +
-        (conversasSemResp.length > 5 ? '<div class="hj-mais" onclick="App.navigate(\'inbox\')">Ver todas (+' + (conversasSemResp.length - 5) + ')</div>' : '') +
-      '</div>' +
-
-      // Seção 2: Agendamentos
-      '<div class="hj-bloco">' +
-        C.sectionHeader('2. Agendamentos', (fluxoAgendamento > 0 ? '<span style="font-size:0.68rem;color:var(--accent-hover);margin-right:8px;">' + fluxoAgendamento + ' em andamento</span>' : '') + '<span class="hj-contador">' + (pending.length + confirmed.length) + '</span>') +
-        (agendaHoje.length === 0
-          ? L.empty('Nenhum agendamento hoje', 'Os agendamentos aparecer\u00e3o aqui.', 'calendar')
-          : '<div class="hj-card-list">' + agendaHoje.slice(0, 6).map(function(a) {
-            var precisaConf = a.status === 'pending';
-            var emAtend = a.status === 'in_progress';
-            return '<div class="hj-card ' + (precisaConf ? 'hj-card-warn' : emAtend ? 'hj-card-urg' : '') + '"><div class="hj-card-main"><div class="hj-card-avatar">' + App._iniciais(a.clientName) + '</div><div class="hj-card-body"><div class="hj-card-title">' + App._esc(a.clientName) + (precisaConf ? ' <span class="badge badge-scheduled">Pendente</span>' : emAtend ? ' <span class="badge badge-progress">Atendendo</span>' : ' <span class="badge badge-completed">Confirmado</span>') + '</div><div class="hj-card-desc">' + App._esc(a.service) + (a.professional ? ' \u2014 ' + Repos.studio.professionals.label(a.professional) : '') + ' \u2022 ' + a.time + '</div></div><div class="hj-card-actions">' +
-              (precisaConf ? '<button class="btn btn-sm" style="font-size:0.68rem;color:var(--green);" onclick="Repos.agenda.update(\'' + a.id + '\',{status:\'confirmed\'});App.renderHoje();">Confirmar</button>' : '') +
-              (!emAtend && !precisaConf ? '<button class="btn btn-sm" style="font-size:0.68rem;color:var(--green);" onclick="App.queueStart(\'' + a.id + '\',\'agenda\');App.renderHoje();">Iniciar</button>' : '') +
-              '<button class="btn btn-sm" style="font-size:0.68rem;" onclick="App.navigate(\'agenda\')">Abrir</button>' +
-            '</div></div></div>';
-          }).join('') + '</div>') +
-      '</div>' +
-
-      // Seção 3: Atendimento de Hoje
-      '<div class="hj-bloco">' +
-        C.sectionHeader('3. Atendimento de Hoje', '<span class="hj-contador">' + (inProgress.length + pending.length + confirmed.length) + '</span>') +
-        this._renderBlocoAcao('Em andamento', dados.blocoAcoes, 'bell', 'atendimento') +
-      '</div>' +
-
-      // Seção 4: Instagram
-      '<div class="hj-bloco">' +
-        C.sectionHeader('4. Instagram', '<span class="hj-contador">' + (igHoje.length + igAtrasados.length) + '</span>') +
-        (igHoje.length === 0 && igAtrasados.length === 0
-          ? '<div class="hj-bloco hj-bloco-placeholder"><div class="hj-placeholder"><span class="hj-placeholder-icon">&#9654;</span><span class="hj-placeholder-text">Nenhuma publica\u00e7\u00e3o pendente.</span></div></div>'
-          : '<div class="hj-card-list">' +
-            igHoje.slice(0, 3).map(function(i) {
-              return '<div class="hj-card" style="cursor:pointer;"><div class="hj-card-main"><div class="hj-card-avatar" style="background:var(--accent-dim);color:var(--accent-hover);">IG</div><div class="hj-card-body"><div class="hj-card-title">' + App._esc(i.titulo) + ' <span class="badge badge-progress">' + i.tipo + '</span></div><div class="hj-card-desc">' + App._esc(i.perfilDestino) + (i.cta ? ' \u2022 CTA: ' + App._esc(i.cta) : '') + '</div></div><div class="hj-card-actions"><button class="btn btn-sm" style="font-size:0.68rem;color:var(--green);" onclick="Marketing.updateItem(\'' + i.id + '\',{status:\'publicado\'});App.renderHoje();">Publicar</button></div></div></div>';
-            }).join('') +
-            igAtrasados.slice(0, 2).map(function(i) {
-              return '<div class="hj-card hj-card-urg" style="cursor:pointer;"><div class="hj-card-main"><div class="hj-card-avatar" style="background:var(--red-dim);color:var(--accent-hover);">IG</div><div class="hj-card-body"><div class="hj-card-title">' + App._esc(i.titulo) + ' <span class="badge badge-cancelled">Atrasado</span></div><div class="hj-card-desc">' + App._esc(i.perfilDestino) + ' \u2022 ' + i.dataPrevista + '</div></div><div class="hj-card-actions"><button class="btn btn-sm" style="font-size:0.68rem;" onclick="App.navigate(\'marketing\')">Abrir</button></div></div></div>';
-            }).join('') +
-          '</div>') +
-        (igData.items.length > 5 ? '<div class="hj-mais" onclick="App.navigate(\'marketing\')">Ver todas (+' + (igData.items.length - 5) + ')</div>' : '') +
-      '</div>' +
-
-      // Seção 5: Encerramento
-      '<div class="hj-bloco">' +
-        C.sectionHeader('5. Encerramento', '') +
-        '<div class="hj-resumo" style="margin-bottom:14px;">' +
-          '<div class="hj-resumo-item"><span class="hj-resumo-val">' + concluidos + '/' + agendaHoje.length + '</span><span class="hj-resumo-lbl">atend. conclu\u00eddos</span></div>' +
-          '<div class="hj-resumo-item"><span class="hj-resumo-val">' + (totalPend > 0 ? totalPend : 0) + '</span><span class="hj-resumo-lbl">pend\u00eancias</span></div>' +
-          '<div class="hj-resumo-item"><span class="hj-resumo-val" style="color:' + (progresso >= 80 ? 'var(--green)' : progresso >= 50 ? 'var(--gold)' : 'var(--accent-hover)') + ';">' + progresso + '%</span><span class="hj-resumo-lbl">progresso</span></div>' +
-        '</div>' +
-        this._renderBlocoAcao('Retornos do dia', dados.blocoRetornos, 'clock', 'lembretes') +
-        this._renderNotifResumo() +
-      '</div>' +
-    '</div>';
-};
-
-// ─── Topbar ───
-
-App._renderTopbar = function(dados) {
-  var h = new Date().getHours();
-  var saudacao = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
-  var dataStr = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-
-  var caixaIcon = dados.metadados.caixaAberto ? '\u25CF' : '\u25CB';
-  var caixaLabel = dados.metadados.caixaAberto ? 'Caixa aberto' : 'Caixa fechado';
-  var caixaCls = dados.metadados.caixaAberto ? 'hj-badge-open' : 'hj-badge-closed';
-
-  var opResumo = Oportunidade.getResumo();
-
-  return '<div class="hj-topbar">' +
-    '<div class="hj-topbar-left">' +
-      '<span class="hj-saudacao">' + saudacao + '</span>' +
-      '<span class="hj-data">' + dataStr + '</span>' +
-    '</div>' +
-    '<div class="hj-topbar-right">' +
-      '<span class="hj-stat"><strong>' + dados.metadados.totalAcoes + '</strong> pend\u00eancias</span>' +
-      '<span class="hj-stat"><strong>' + dados.metadados.totalAgenda + '</strong> agendamentos</span>' +
-      '<span class="hj-stat ' + caixaCls + '">' + caixaIcon + ' ' + caixaLabel + '</span>' +
-      '<span class="hj-stat" style="color:var(--gold);cursor:pointer;" onclick="App.navigate(\'oportunidades\')"><strong>' + opResumo.total + '</strong> oportunidade' + (opResumo.total !== 1 ? 's' : '') + '</span>' +
-      '<span class="hj-stat" style="color:var(--accent-hover);cursor:pointer;" onclick="App.navigate(\'filas\')"><strong>' + Fila.getResumo().total + '</strong> na fila</span>' +
-      '<span class="hj-stat" style="color:var(--green);cursor:pointer;" onclick="App.navigate(\'inbox\')"><strong>' + DB.getConversas().filter(function(c){return c.status!=='encerrada' && c.status==='aguardando_estudio';}).length + '</strong> p/ responder</span>' +
-      '<span class="hj-stat" style="color:var(--yellow);cursor:pointer;" onclick="App.navigate(\'confirmacao\')"><strong>' + Confirmacao.getResumo().pendentes + '</strong> p/ confirmar</span>' +
-    '</div>' +
-    this._renderNotifResumo() +
-  '</div>';
-};
-
-// ─── Resumo do dia ───
-
-App._renderResumo = function(dados) {
-  var total = 0;
-  var concluidos = 0;
-  var pendentes = 0;
-
-  dados.blocoAgenda.forEach(function(a) {
-    total++;
-    if (a.status === 'completed' || a.status === 'done') concluidos++;
-    else if (a.status !== 'cancelled') pendentes++;
-  });
-
-  var proximo = null;
-  for (var i = 0; i < dados.blocoAgenda.length; i++) {
-    var a = dados.blocoAgenda[i];
-    if (a.status === 'pending' || a.status === 'confirmed') {
-      proximo = a;
-      break;
-    }
-  }
-
-  var html = '<div class="hj-resumo">';
-  html += '<div class="hj-resumo-item"><span class="hj-resumo-val">' + (dados.blocoAgenda.length + dados.blocoAcoes.length) + '</span><span class="hj-resumo-lbl">atendimentos</span></div>';
-  html += '<div class="hj-resumo-item"><span class="hj-resumo-val hj-resumo-green">' + concluidos + '</span><span class="hj-resumo-lbl">conclu\u00eddos</span></div>';
-  html += '<div class="hj-resumo-item"><span class="hj-resumo-val hj-resumo-red">' + dados.metadados.totalAcoes + '</span><span class="hj-resumo-lbl">pend\u00eancias</span></div>';
-  html += '<div class="hj-resumo-item"><span class="hj-resumo-val">' + (dados.metadados.caixaAberto ? '\u25CF' : '\u25CB') + '</span><span class="hj-resumo-lbl">' + (dados.metadados.caixaAberto ? 'Caixa aberto' : 'Caixa fechado') + '</span></div>';
-  if (proximo) {
-    html += '<div class="hj-resumo-item hj-resumo-prox"><span class="hj-resumo-val">' + (proximo.time || '') + '</span><span class="hj-resumo-lbl">' + this._esc(proximo.clientName) + '</span></div>';
-  }
-  html += '</div>';
-  return html;
-};
-
-// ─── Filtros ───
-
-App._renderFiltros = function() {
-  var filtros = [
-    { key: 'tudo', label: 'Tudo' },
-    { key: 'prioridades', label: 'Prioridades' },
-    { key: 'agenda', label: 'Agenda' },
-    { key: 'clientes', label: 'Clientes' },
-    { key: 'financeiro', label: 'Financeiro' }
-  ];
-
-  var html = '<div class="hj-filtros">';
-  for (var i = 0; i < filtros.length; i++) {
-    var f = filtros[i];
-    var ativo = f.key === this._hojeFilter ? ' hj-chip-active' : '';
-    html += '<span class="hj-chip' + ativo + '" onclick="App._setHojeFilter(\'' + f.key + '\')">' + f.label + '</span>';
-  }
-  html += '</div>';
-  return html;
-};
-
-App._setHojeFilter = function(filtro) {
-  this._hojeFilter = filtro;
-  this._renderHojeAtual();
-};
-
-App._aplicarFiltro = function(dados) {
-  var f = this._hojeFilter;
-  if (f === 'tudo') return dados;
-
-  var vazio = { blocoAcoes: [], blocoAgenda: [], blocoRetornos: [], blocoNegociacoes: [], blocoPendencias: [], blocoMarketing: dados.blocoMarketing };
-
-  if (f === 'prioridades') {
-    return { blocoAcoes: dados.blocoAcoes, blocoAgenda: [], blocoRetornos: [], blocoNegociacoes: [], blocoPendencias: [], blocoMarketing: dados.blocoMarketing };
-  }
-  if (f === 'agenda') {
-    return { blocoAcoes: [], blocoAgenda: dados.blocoAgenda, blocoRetornos: [], blocoNegociacoes: [], blocoPendencias: [], blocoMarketing: dados.blocoMarketing };
-  }
-  if (f === 'clientes') {
-    return { blocoAcoes: [], blocoAgenda: [], blocoRetornos: dados.blocoRetornos, blocoNegociacoes: dados.blocoNegociacoes, blocoPendencias: [], blocoMarketing: dados.blocoMarketing };
-  }
-  if (f === 'financeiro') {
-    return { blocoAcoes: dados.blocoAcoes, blocoAgenda: [], blocoRetornos: [], blocoNegociacoes: [], blocoPendencias: dados.blocoPendencias, blocoMarketing: dados.blocoMarketing };
-  }
-  return dados;
-};
-
-// ─── Card expand ───
-
-App._toggleCardExpand = function(cardId) {
-  if (this._expandedCards[cardId]) {
-    delete this._expandedCards[cardId];
+      '<button class="btn btn-primary btn-sm" style="white-space:nowrap;" onclick="' + (top.acaoFn || "App.navigate('" + top.origem + "')") + '">' + App._esc(top.acaoLabel || 'Abrir') + '</button>' +
+      '</div>';
   } else {
-    this._expandedCards[cardId] = true;
-  }
-  this._renderHojeAtual();
-};
-
-// ─── Helpers ───
-
-App._iniciais = function(nome) {
-  if (!nome) return '?';
-  var parts = nome.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-};
-
-App._tempoRelativo = function(dataStr) {
-  if (!dataStr) return '';
-  var diff = Date.now() - new Date(dataStr).getTime();
-  var mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'agora';
-  if (mins < 60) return 'h\u00e1 ' + mins + ' min';
-  var horas = Math.floor(mins / 60);
-  if (horas < 24) return 'h\u00e1 ' + horas + 'h';
-  var dias = Math.floor(horas / 24);
-  if (dias === 1) return 'ontem';
-  if (dias < 7) return 'h\u00e1 ' + dias + ' dias';
-  return dataStr.slice(0, 10);
-};
-
-App._tempoAte = function(timeStr) {
-  if (!timeStr) return '';
-  var now = new Date();
-  var parts = timeStr.split(':').map(Number);
-  var target = new Date(now);
-  target.setHours(parts[0], parts[1], 0, 0);
-  var diff = target.getTime() - now.getTime();
-  var mins = Math.round(diff / 60000);
-  if (mins < -60) return '';
-  if (mins < 0) return '(atrasado)';
-  if (mins === 0) return 'agora';
-  if (mins < 60) return 'em ' + mins + ' min';
-  var h = Math.floor(mins / 60);
-  var m = mins % 60;
-  return 'em ' + h + 'h' + (m > 0 ? m + 'min' : '');
-};
-
-// ─── Bloco genérico ───
-
-App._renderBlocoAcao = function(titulo, cards, iconeVazio, modulo) {
-  var total = cards.length;
-
-  if (total === 0) {
-    var estados = {
-      'A\u00e7\u00f5es Priorit\u00e1rias': { icon: 'bell', title: 'Nenhuma a\u00e7\u00e3o priorit\u00e1ria', desc: 'Todos os atendimentos est\u00e3o em dia.' },
-      'Retornos e Acompanhamentos': { icon: 'clock', title: 'Nada pendente', desc: 'Nenhum lembrete ou retorno para hoje.' },
-      'Clientes em Negocia\u00e7\u00e3o': { icon: 'person', title: 'Nenhum cliente em negocia\u00e7\u00e3o', desc: 'Clientes com interesse aparecer\u00e3o aqui.' },
-      'Pend\u00eancias de Ontem': { icon: 'document', title: 'Nenhuma pend\u00eancia', desc: 'Ontem foi conclu\u00eddo sem pend\u00eancias.' }
-    };
-    var es = estados[titulo] || { icon: 'bell', title: 'Nenhum item', desc: '' };
-    return '<div class="hj-bloco">' + C.sectionHeader(titulo) + C.emptyStateFull(es) + '</div>';
-  }
-
-  var limite = 5;
-  var visiveis = cards.slice(0, limite);
-  var excesso = total - limite;
-
-  var html = '<div class="hj-bloco">' + C.sectionHeader(titulo, '<span class="hj-contador">' + total + '</span>') + '<div class="hj-card-list">';
-  for (var i = 0; i < visiveis.length; i++) {
-    html += this._renderCardAcao(visiveis[i]);
+    html += '<div class="dash-prio-header">\u2705 Nenhuma prioridade cr\u00edtica no momento</div>';
   }
   html += '</div>';
-  if (excesso > 0) {
-    html += '<div class="hj-mais" onclick="App.navigate(\'' + modulo + '\')">Ver todos (+' + excesso + ')</div>';
+
+  // Bloco 2: WhatsApp
+  html += '<div class="dash-bloco">' +
+    '<div class="dash-bloco-header" onclick="App.navigate(\'inbox\')">\uD83D\uDCE8 WhatsApp <span class="dash-bloco-count">' + aguardandoResposta + '</span></div>';
+  var wppAguardando = wpp.filter(function(c) { return c.status === 'aguardando_estudio'; }).slice(0, 5);
+  if (wppAguardando.length === 0) {
+    html += '<div class="dash-vazio">Nenhuma mensagem aguardando resposta.</div>';
+  } else {
+    wppAguardando.forEach(function(c) {
+      html += '<div class="dash-item clickable" onclick="Executor.executar(\'whatsapp\', {conversaId:\'' + c.id + '\'})">' +
+        '<span class="dash-item-nome">' + App._esc(c.clientName) + '</span>' +
+        '<span class="dash-item-meta">' + App._esc(c.motivoLabel || '') + ' \u2022 ' + c.tempoLabel + '</span>' +
+        '<span class="dash-item-prio inb-' + (c.priority || 'medium') + '">' + (c.priority === 'high' ? 'Alta' : '') + '</span>' +
+      '</div>';
+    });
   }
   html += '</div>';
-  return html;
-};
 
-// ─── Card de ação ───
-
-App._renderCardAcao = function(c) {
-  var cardId = c.id || 'card_' + Math.random().toString(36).slice(2, 6);
-  var expandida = this._expandedCards[cardId] || false;
-
-  var urgCls = c.prioridade <= 1 ? ' hj-card-urg' : c.prioridade <= 3 ? ' hj-card-warn' : '';
-  var iniciais = this._iniciais(c.clientName);
-
-  var timeHtml = '';
-  if (c.timestamp) {
-    var rel = this._tempoRelativo(new Date(c.timestamp).toISOString());
-    if (rel) timeHtml = '<span class="hj-card-time">' + rel + '</span>';
+  // Bloco 3: Agenda
+  html += '<div class="dash-bloco">' +
+    '<div class="dash-bloco-header" onclick="App.navigate(\'agenda\')">\uD83D\uDCC5 Agenda <span class="dash-bloco-count">' + agendaHoje.length + '</span></div>';
+  var proximos = agendaHoje.filter(function(a) { return a.status === 'pending' || a.status === 'confirmed'; }).slice(0, 5);
+  if (proximos.length === 0) {
+    html += '<div class="dash-vazio">Nenhum atendimento hoje.</div>';
+  } else {
+    proximos.forEach(function(a) {
+      var statusIcon = a.status === 'confirmed' ? '\u2705' : a.status === 'in_progress' ? '\u25B6' : '\u23F3';
+      html += '<div class="dash-item clickable" onclick="App.navigate(\'agenda\')">' +
+        '<span class="dash-item-hora">' + a.time + '</span>' +
+        '<span class="dash-item-nome">' + App._esc(a.clientName) + '</span>' +
+        '<span class="dash-item-meta">' + App._esc(a.service || '') + '</span>' +
+        '<span>' + statusIcon + '</span>' +
+      '</div>';
+    });
   }
-
-  var badgeHtml = '';
-  if (c.badge) {
-    var badgeCls = c.badgeType === 'danger' ? 'badge-cancelled' : c.badgeType === 'warning' ? 'badge-scheduled' : c.badgeType === 'info' ? 'badge-progress' : 'badge-completed';
-    badgeHtml = ' <span class="badge ' + badgeCls + '">' + this._esc(c.badge) + '</span>';
+  if (confirmacoesPendentes.length > 0) {
+    html += '<div class="dash-bloco-sub" onclick="App.navigate(\'confirmacao\')">\u2705 ' + confirmacoesPendentes.length + ' confirma\u00e7\u00e3o(\u00f5es) pendente(s)</div>';
   }
+  html += '</div>';
 
-  var metaHtml = '';
-  if (expandida) {
-    metaHtml = '<div class="hj-card-meta">' +
-      (c.clientName ? '<span><strong>Cliente:</strong> ' + this._esc(c.clientName) + '</span>' : '') +
-      '<span><strong>Origem:</strong> ' + (c.modulo || '—') + '</span>' +
-      (c.desc ? '<span class="hj-card-meta-desc">' + this._esc(c.desc) + '</span>' : '') +
+  // Bloco 4: Opera\u00e7\u00e3o
+  html += '<div class="dash-bloco">' +
+    '<div class="dash-bloco-header">\u2699 Opera\u00e7\u00e3o</div>';
+  var pends = acoesFila.filter(function(a) { return a.status === 'pendente'; });
+  if (pends.length > 0) {
+    html += '<div class="dash-bloco-sub" onclick="App.navigate(\'acoes_prioritarias\')">\uD83D\uDCCB ' + pends.length + ' a\u00e7\u00e3o(\u00f5es) priorit\u00e1ria(s)' +
+      (tarefasCriticas.length > 0 ? ' <span class="dash-badge-critico">' + tarefasCriticas.length + ' cr\u00edtica(s)</span>' : '') +
     '</div>';
   }
-
-  var secBtnHtml = '';
-  var secLabel = '';
-  var secAction = '';
-  if (c.modulo === 'atendimento' || c.modulo === 'agenda') { secLabel = 'Abrir'; secAction = "App.navigate('" + c.modulo + "')"; }
-  else if (c.modulo === 'clientes') { secLabel = 'Ver cliente'; secAction = "App.navigate('clientes')"; }
-  else if (c.modulo === 'os') { secLabel = 'Abrir OS'; secAction = "App.navigate('os')"; }
-  else if (c.modulo === 'financeiro') { secLabel = 'Financeiro'; secAction = "App.navigate('financeiro')"; }
-  else if (c.modulo === 'lembretes') { secLabel = 'Ver'; secAction = "App.navigate('lembretes')"; }
-  else if (c.modulo === 'termos') { secLabel = 'Ver termo'; secAction = "App.navigate('termos')"; }
-  if (secLabel) {
-    secBtnHtml = '<button class="btn btn-sm hj-card-btn-sec" onclick="' + secAction + '">' + secLabel + '</button>';
-  }
-
-  var expandIcon = expandida ? '\u25B2' : '\u25BC';
-
-  return '<div class="hj-card' + urgCls + '">' +
-    '<div class="hj-card-main">' +
-      '<div class="hj-card-avatar">' + iniciais + '</div>' +
-      '<div class="hj-card-body">' +
-        '<div class="hj-card-title">' + this._esc(c.title) + badgeHtml + timeHtml + '</div>' +
-        '<div class="hj-card-desc">' + this._esc(c.desc) + '</div>' +
-      '</div>' +
-      '<div class="hj-card-actions">' +
-        '<button class="btn btn-primary btn-sm hj-card-btn" onclick="' + c.btnAction + '">' + this._esc(c.btnLabel) + '</button>' +
-        secBtnHtml +
-        '<button class="hj-card-expand" onclick="App._toggleCardExpand(\'' + cardId + '\')" title="Detalhes">' + expandIcon + '</button>' +
-      '</div>' +
-    '</div>' +
-    metaHtml +
-  '</div>';
-};
-
-// ─── Bloco Agenda ───
-
-App._renderBlocoAgenda = function(items) {
-  var total = items.length;
-
-  if (total === 0) {
-    return '<div class="hj-bloco">' + C.sectionHeader('Agenda de Hoje') + L.empty('Nenhum agendamento hoje', 'Os agendamentos do dia aparecer\u00e3o aqui.', 'calendar') + '</div>';
-  }
-
-  var limite = 5;
-  var visiveis = items.slice(0, limite);
-  var excesso = total - limite;
-
-  var html = '<div class="hj-bloco">' + C.sectionHeader('Agenda de Hoje', '<button class="btn btn-sm" onclick="App.navigate(\'agenda\')">Ver agenda</button><span class="hj-contador" style="margin-left:8px;">' + total + '</span>') + '<div class="hj-card-list">';
-  for (var i = 0; i < visiveis.length; i++) {
-    html += this._renderCardAgenda(visiveis[i]);
-  }
-  html += '</div>';
-  if (excesso > 0) {
-    html += '<div class="hj-mais" onclick="App.navigate(\'agenda\')">Ver todos (+' + excesso + ')</div>';
-  }
-  html += '</div>';
-  return html;
-};
-
-App._renderCardAgenda = function(item) {
-  var cardId = 'ag_' + item.id;
-  var expandida = this._expandedCards[cardId] || false;
-  var iniciais = this._iniciais(item.clientName);
-
-  var isDone = item.status === 'completed' || item.status === 'done';
-  var isProgress = item.status === 'in_progress';
-  var statusCls = isDone ? 'hj-ag-done' : isProgress ? 'hj-ag-progress' : '';
-
-  var tempoHtml = '';
-  if (item.time) {
-    var rel = this._tempoAte(item.time);
-    if (rel) tempoHtml = '<span class="hj-card-time">' + rel + '</span>';
-  }
-
-  var profDisplay = item.professional ? ' \u2014 ' + Repos.studio.professionals.label(item.professional) : '';
-
-  var metaHtml = '';
-  if (expandida) {
-    metaHtml = '<div class="hj-card-meta">' +
-      (item.notes ? '<span><strong>Obs:</strong> ' + this._esc(item.notes) + '</span>' : '') +
-      (item.clientName ? '<span><strong>Cliente:</strong> ' + this._esc(item.clientName) + '</span>' : '') +
-      '<span><strong>Status:</strong> ' + item.status + '</span>' +
+  if (gargalos.length > 0) {
+    html += '<div class="dash-bloco-sub" onclick="App.navigate(\'gargalos_operacionais\')">\u26A0 ' + gargalos.length + ' gargalo(s) detectado(s)' +
+      (gargalosCriticos.length > 0 ? ' <span class="dash-badge-critico">' + gargalosCriticos.length + ' cr\u00edtico(s)</span>' : '') +
     '</div>';
   }
-
-  var actionHtml = '';
-  if (!isDone) {
-    if (!isProgress) {
-      actionHtml += '<button class="btn btn-sm hj-card-btn" onclick="App.queueStart(\'' + item.id + '\',\'agenda\')" style="color:var(--green);border-color:var(--green-dim);">Iniciar</button>';
-    } else {
-      actionHtml += '<button class="btn btn-sm hj-card-btn" onclick="App.queueFinish(\'' + item.id + '\',\'agenda\')" style="color:var(--accent-hover);border-color:var(--accent-dim);">Concluir</button>';
-    }
+  if (opQueue.length > 0) {
+    html += '<div class="dash-bloco-sub" onclick="App.navigate(\'operador\')">\uD83D\uDD04 ' + opQueue.length + ' tarefa(s) na fila operacional</div>';
   }
-
-  var expandIcon = expandida ? '\u25B2' : '\u25BC';
-
-  return '<div class="hj-card hj-card-ag ' + statusCls + '">' +
-    '<div class="hj-card-main">' +
-      '<div class="hj-card-avatar">' + iniciais + '</div>' +
-      '<div class="hj-card-body">' +
-        '<div class="hj-card-title">' + this._esc(item.clientName) + tempoHtml + '</div>' +
-        '<div class="hj-card-desc">' + this._esc(item.service) + profDisplay + ' \u2022 ' + item.time + '</div>' +
-      '</div>' +
-      '<div class="hj-card-actions">' +
-        actionHtml +
-        '<button class="hj-card-expand" onclick="App._toggleCardExpand(\'' + cardId + '\')" title="Detalhes">' + expandIcon + '</button>' +
-      '</div>' +
-    '</div>' +
-    metaHtml +
-  '</div>';
-};
-
-// ─── Bloco Marketing ───
-
-App._renderNotifResumo = function() {
-  var resumo = Notificacao.collectHojeResumo();
-  if (resumo.naoLidas === 0) return '';
-  var cls = resumo.criticas > 0 ? 'hj-notif-critico' : '';
-  return '<div class="hj-notif-resumo ' + cls + '" onclick="App.openNotifPanel()">' +
-    '<span class="hj-notif-icon">&#128276;</span>' +
-    '<span class="hj-notif-text"><strong>' + resumo.naoLidas + '</strong> notifica\u00e7\u00e3o' + (resumo.naoLidas !== 1 ? '\u00f5es' : '') + ' n\u00e3o lida' + (resumo.naoLidas !== 1 ? 's' : '') + '</span>' +
-    (resumo.criticas > 0 ? '<span class="hj-notif-criticas">' + resumo.criticas + ' cr\u00edtica' + (resumo.criticas !== 1 ? 's' : '') + '</span>' : '') +
-    '<span class="hj-notif-btn">Abrir</span>' +
-  '</div>';
-};
-
-App._renderBlocoMarketing = function(items) {
-  if (!items || items.length === 0) {
-    return '<div class="hj-bloco hj-bloco-placeholder">' +
-      '<div class="hj-placeholder">' +
-        '<span class="hj-placeholder-icon">&#9654;</span>' +
-        '<span class="hj-placeholder-text">Em breve: a\u00e7\u00f5es inteligentes para seu est\u00fadio.</span>' +
-      '</div>' +
-    '</div>';
+  copAcoes.forEach(function(a) {
+    html += '<div class="dash-bloco-sub" onclick="Executor.executar(\'' + App._esc(a.tipo || '') + '\', {})">' + App._esc(a.categoria + ': ' + a.quantidade + ' \u2014 ' + a.motivo.substring(0, 40)) + '</div>';
+  });
+  if (pends.length === 0 && gargalos.length === 0 && opQueue.length === 0 && copAcoes.length === 0) {
+    html += '<div class="dash-vazio">Nenhuma opera\u00e7\u00e3o pendente.</div>';
   }
-  var html = '<div class="hj-bloco">' + C.sectionHeader('Produ\u00e7\u00e3o de Conte\u00fado', '<span class="hj-contador">' + items.length + '</span>') + '<div class="hj-card-list">';
-  for (var i = 0; i < items.length; i++) {
-    var c = items[i];
-    html += this._renderCardAcao(c);
+  html += '</div>';
+
+  // Bloco 5: Di\u00e1rio Operacional
+  html += '<div class="dash-bloco">' +
+    '<div class="dash-bloco-header" onclick="App.navigate(\'diario_operacional\')">\uD83D\uDCCA \u00daltimos eventos</div>';
+  if (ultimosEventos.length === 0) {
+    html += '<div class="dash-vazio">Nenhum evento registrado.</div>';
+  } else {
+    ultimosEventos.forEach(function(e) {
+      var horario = e.timestamp ? e.timestamp.slice(11, 19) : '--:--';
+      html += '<div class="dash-item">' +
+        '<span class="dash-item-hora">' + horario + '</span>' +
+        '<span class="dash-item-nome">' + App._esc(e.evento) + '</span>' +
+        '<span class="dash-item-meta">' + App._esc(e.modulo || '') + '</span>' +
+      '</div>';
+    });
   }
-  html += '</div><div class="hj-mais" onclick="App.navigate(\'marketing\')">Abrir Central de Marketing</div></div>';
-  return html;
+  html += '</div>';
+
+  // Bloco 6: Resumo
+  html += '<div class="dash-bloco dash-resumo">' +
+    '<div class="dash-bloco-header">\uD83D\uDCCA Resumo operacional</div>' +
+    '<div class="dash-resumo-grid">' +
+    '<div class="dash-resumo-item"><span class="dash-resumo-val">' + aguardandoResposta + '</span><span>Clientes aguardando resposta</span></div>' +
+    '<div class="dash-resumo-item"><span class="dash-resumo-val">' + pagamentosPendentes.length + '</span><span>Clientes aguardando pagamento</span></div>' +
+    '<div class="dash-resumo-item"><span class="dash-resumo-val">' + agendaHoje.length + '</span><span>Atendimentos hoje</span></div>' +
+    '<div class="dash-resumo-item"><span class="dash-resumo-val dash-badge-critico">' + (tarefasCriticas.length + gargalosCriticos.length) + '</span><span>Tarefas cr\u00edticas</span></div>' +
+    '<div class="dash-resumo-item"><span class="dash-resumo-val">' + (alertasOp.length + gargalos.length) + '</span><span>Alertas operacionais</span></div>' +
+    '</div></div>';
+
+  html += '</div>'; // dash-wrap
+  document.getElementById('moduleContent').innerHTML = html;
 };
 
-App._renderComunicacaoResumo = function() {
-  var r = Comunicacao.getResumoOperacional();
-  var total = r.totalPendencias;
-  if (total === 0) return '';
-  var critico = r.whatsapp.pendentes > 0 || r.instagram.pendente > 0;
-  return '<div class="hj-notif-resumo ' + (critico ? 'hj-notif-critico' : '') + '" onclick="App.navigate(\'comunicacao\')" style="cursor:pointer;">' +
-    '<span class="hj-notif-icon" style="font-size:1.2rem;">&#128172;</span>' +
-    '<span class="hj-notif-text"><strong>' + total + '</strong> pend\u00eancia' + (total !== 1 ? 's' : '') + ' operaciona' + (total !== 1 ? 'is' : 'l') + '</span>' +
-    '<span style="font-size:0.72rem;color:var(--text-muted);">' +
-      (r.whatsapp.pendentes > 0 ? r.whatsapp.pendentes + ' WhatsApp | ' : '') +
-      (r.agenda.confirmar > 0 ? r.agenda.confirmar + ' confirmar | ' : '') +
-      (r.instagram.pendente > 0 ? r.instagram.pendente + ' Instagram' : '') +
-    '</span>' +
-    '<span class="hj-notif-btn">Abrir Central</span>' +
-  '</div>';
-};
+// Auto-registrar refresh via EventBus
+(function() {
+  if (typeof EventBus === 'undefined') return;
+  EventBus.on('meudia.updated', function() {
+    if (typeof App !== 'undefined' && App.refreshHoje) App.refreshHoje();
+  });
+  EventBus.on('copiloto.updated', function() {
+    if (typeof App !== 'undefined' && App.refreshHoje) App.refreshHoje();
+  });
+})();
+
+(function() {
+  var k = 'hj_state';
+  App._hojeTaskFilter = 'tudo';
+  try {
+    var s = JSON.parse(localStorage.getItem(k));
+    if (s) { App._hojeTaskFilter = s.f || 'tudo'; }
+  } catch(e) {}
+  App._saveHojeState = function() { localStorage.setItem(k, JSON.stringify({ f: App._hojeTaskFilter })); };
+})();
+

@@ -1270,6 +1270,43 @@ input.has-error, select.has-error, textarea.has-error { border-color: var(--colo
 .gar-tabela th { text-align:left; padding:6px; border-bottom:2px solid var(--border); font-size:0.63rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); white-space:nowrap; }
 .gar-tabela td { padding:6px; border-bottom:1px solid var(--border-light); }
 
+/* ─── Dashboard de Abertura Operacional ─── */
+.dash-wrap { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width: 900px) { .dash-wrap { grid-template-columns:1fr; } }
+.dash-bloco { display:flex; flex-direction:column; gap:6px; padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); }
+.dash-prioridade { grid-column:1 / -1; }
+.dash-resumo { grid-column:1 / -1; }
+.dash-bloco-header { font-size:0.82rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; padding-bottom:6px; border-bottom:1px solid var(--border-light); }
+.dash-bloco-header:hover { color:var(--accent); }
+.dash-bloco-count { background:var(--accent-dim); color:var(--accent); border-radius:8px; padding:0 7px; font-size:0.65rem; font-weight:700; }
+.dash-badge-critico { background:#dc262620; color:#dc2626; border-radius:3px; padding:1px 5px; font-size:0.6rem; font-weight:700; }
+.dash-prio-header { font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
+.dash-prio-card { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:var(--radius-sm); border:1px solid var(--border); }
+.dash-prio-card.dash-critico { background:#dc262608; border-color:#dc262640; }
+.dash-prio-card.dash-alto { background:#f59e0b08; border-color:#f59e0b40; }
+.dash-prio-card.dash-medio { background:#3b82f608; border-color:#3b82f640; }
+.dash-prio-score { font-size:1.4rem; font-weight:800; width:48px; text-align:center; }
+.dash-critico .dash-prio-score { color:#dc2626; }
+.dash-alto .dash-prio-score { color:#f59e0b; }
+.dash-medio .dash-prio-score { color:#3b82f6; }
+.dash-prio-body { flex:1; min-width:0; }
+.dash-prio-titulo { font-size:0.85rem; font-weight:600; }
+.dash-prio-origem { font-size:0.7rem; color:var(--text-muted); margin:2px 0; }
+.dash-prio-motivos { display:flex; gap:2px; flex-wrap:wrap; }
+.dash-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:var(--radius-sm); font-size:0.78rem; }
+.dash-item.clickable { cursor:pointer; }
+.dash-item.clickable:hover { background:var(--surface-hover); }
+.dash-item-nome { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dash-item-hora { font-size:0.7rem; color:var(--text-muted); font-weight:600; width:36px; flex-shrink:0; }
+.dash-item-meta { font-size:0.68rem; color:var(--text-dim); white-space:nowrap; }
+.dash-item-prio { font-size:0.55rem; padding:1px 5px; border-radius:3px; }
+.dash-bloco-sub { font-size:0.75rem; padding:6px 8px; border-radius:var(--radius-sm); cursor:pointer; display:flex; align-items:center; gap:6px; }
+.dash-bloco-sub:hover { background:var(--surface-hover); }
+.dash-vazio { font-size:0.72rem; color:var(--text-dim); padding:6px 0; }
+.dash-resumo-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:8px; margin-top:4px; }
+.dash-resumo-item { display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px; border-radius:var(--radius-sm); background:var(--surface-2); text-align:center; font-size:0.7rem; color:var(--text-muted); }
+.dash-resumo-val { font-size:1.2rem; font-weight:700; color:var(--text); }
+
 /* ─── Ações Prioritárias ─── */
 .ap-wrap { display:flex; flex-direction:column; gap:12px; }
 .ap-metrics { display:flex; flex-wrap:wrap; gap:6px; }
