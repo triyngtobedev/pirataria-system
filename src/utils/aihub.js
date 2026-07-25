@@ -209,6 +209,33 @@ const AIHub = {
 
   // ─── Coletores públicos ───
 
+  _analiseAgendamento: function() {
+    var insights = [];
+    var hoje = DB._today();
+    var conversas = DB.getConversas().filter(function(c) { return c.status !== 'encerrada'; });
+    var solicitacoes = 0;
+    for (var i = 0; i < conversas.length; i++) {
+      var msgs = DB.getMensagens(conversas[i].id);
+      for (var j = 0; j < msgs.length; j++) {
+        if (msgs[j].type === 'recebida' && AgendamentoAssistente.detectarIntencao(msgs[j].content)) {
+          solicitacoes++;
+          break;
+        }
+      }
+    }
+    if (solicitacoes > 0) {
+      insights.push(AIHub._make('alerta', 'agendamento', 1, solicitacoes + ' solicita\u00e7\u00e3o' + (solicitacoes !== 1 ? '\u00f5es' : '') + ' de agendamento aguardando', 'Clientes demonstraram interesse em agendar. Ofere\u00e7a hor\u00e1rios dispon\u00edveis.', 'inbox', null, 'Ver conversas', 'navigate', 'inbox'));
+    }
+    var hojeApps = DB.getAppointmentsByDate(hoje);
+    var criadosHoje = hojeApps.filter(function(a) {
+      return a.createdAt && a.createdAt.slice(0, 10) === hoje;
+    }).length;
+    if (criadosHoje > 0) {
+      insights.push(AIHub._make('info', 'agendamento', 3, criadosHoje + ' agendamento' + (criadosHoje !== 1 ? 's' : '') + ' criado' + (criadosHoje !== 1 ? 's' : '') + ' hoje', 'Novos agendamentos registrados no sistema.', 'agenda', null, 'Ver agenda', 'navigate', 'agenda'));
+    }
+    return insights;
+  },
+
   _analiseConfirmacao: function() {
     var insights = [];
     var resumo = Confirmacao.getResumo();
@@ -286,6 +313,7 @@ const AIHub = {
   collect: function() {
     return [].concat(
       this._analiseOnboarding(),
+      this._analiseAgendamento(),
       this._analiseConfirmacao(),
       this._analiseComunicacao(),
       this._analiseCRM(),

@@ -158,6 +158,20 @@ const Inbox = {
     respostasRapidas.push({ label: 'Reagendamento', texto: 'Ol\u00e1, ' + c.clientName + '! Tudo bem? Precisamos remarcar seu hor\u00e1rio. Quando ficaria melhor para voc\u00ea?' });
     respostasRapidas.push({ label: 'Encerramento', texto: 'Foi um prazer atender voc\u00ea, ' + c.clientName + '! Qualquer d\u00favida, estamos \u00e0 disposi\u00e7\u00e3o.' });
 
+    // Detecção de intenção de agendamento
+    var intencaoAgendamento = false;
+    var sugestaoData = '';
+    var sugestaoHorarios = [];
+    var sugestaoMelhorHorario = null;
+    if (AgendamentoAssistente.detectarIntencao(ultimaPergunta)) {
+      intencaoAgendamento = true;
+      var hoje = DB._today();
+      sugestaoData = hoje;
+      sugestaoHorarios = AgendamentoAssistente.getHorariosDisponiveis(hoje, c.professional || '');
+      sugestaoMelhorHorario = sugestaoHorarios.length > 0 ? sugestaoHorarios[0] : null;
+      proximaAcao = 'Cliente quer agendar — ' + (sugestaoMelhorHorario ? 'sugerir ' + sugestaoMelhorHorario.hora : 'verificar disponibilidade');
+    }
+
     // Contextuais
     if (ultimaPergunta && (ultimaPergunta.indexOf('pre\u00e7o') >= 0 || ultimaPergunta.indexOf('valor') >= 0 || ultimaPergunta.indexOf('quanto') >= 0)) {
       respostasRapidas.unshift({ label: 'Or\u00e7amento', texto: 'Vou te passar os valores! Podemos marcar um hor\u00e1rio para avaliarmos pessoalmente? Ou prefere que envie os valores por aqui?' });
@@ -183,7 +197,11 @@ const Inbox = {
       proximaAcao: proximaAcao,
       chanceAgendamento: chanceAgendamento,
       alertas: alertas,
-      respostasRapidas: respostasRapidas
+      respostasRapidas: respostasRapidas,
+      intencaoAgendamento: intencaoAgendamento,
+      sugestaoData: sugestaoData,
+      sugestaoHorarios: sugestaoHorarios,
+      sugestaoMelhorHorario: sugestaoMelhorHorario
     };
   },
 

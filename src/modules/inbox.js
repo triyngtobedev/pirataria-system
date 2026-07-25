@@ -165,6 +165,29 @@ App._renderConversaDetail = function(c) {
         '</div>' +
       '</div>' +
     '</div>';
+
+    // Assistente de Agendamento (quando detecta intenção)
+    if (assistente.intencaoAgendamento) {
+      var hoje = DB._today();
+      var horariosHtml = assistente.sugestaoHorarios.length > 0
+        ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">' +
+          assistente.sugestaoHorarios.slice(0, 8).map(function(h) {
+            return '<button class="btn btn-sm" style="font-size:0.72rem;" onclick="App._agendarPeloAssistente(\'' + c.id + '\',\'' + h.hora + '\',\'' + hoje + '\')">' + h.hora + '</button>';
+          }).join('') +
+        '</div>'
+        : '<div style="color:var(--accent-hover);font-size:0.78rem;margin-top:4px;">Nenhum hor\u00e1rio dispon\u00edvel hoje.</div>';
+
+      assistenteHtml += '<div class="inb-section" style="background:var(--surface);border:2px solid var(--gold-dim);border-radius:var(--radius-md);padding:12px;margin-bottom:16px;margin-top:-8px;">' +
+        '<div style="font-size:0.82rem;font-weight:500;margin-bottom:6px;">\uD83D\uDCC5 Assistente de Agendamento</div>' +
+        '<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:4px;">Cliente demonstrou interesse em agendar. Hor\u00e1rios dispon\u00edveis hoje:</div>' +
+        horariosHtml +
+        (assistente.sugestaoMelhorHorario ? '<div style="font-size:0.72rem;color:var(--gold);margin-top:6px;">Melhor hor\u00e1rio: <strong>' + assistente.sugestaoMelhorHorario.hora + '</strong></div>' : '') +
+        '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-light);display:flex;flex-wrap:wrap;gap:4px;">' +
+          '<button class="btn btn-sm" onclick="App._agendarPeloAssistente(\'' + c.id + '\',\'\',\'' + hoje + '\')" style="color:var(--green);">Criar agendamento</button>' +
+          '<button class="btn btn-sm" onclick="App.navigate(\'agenda\')">Ver agenda completa</button>' +
+        '</div>' +
+      '</div>';
+    }
   }
 
   return '<div class="inb-detail-wrap">' +
@@ -214,6 +237,22 @@ App._renderConversaDetail = function(c) {
       '</div>' +
     '</div>' +
   '</div>';
+};
+
+App._agendarPeloAssistente = function(conversaId, horario, data) {
+  var c = Inbox.get(conversaId);
+  if (!c) return;
+  if (!horario) {
+    var horarios = AgendamentoAssistente.getHorariosDisponiveis(data, c.professional || '');
+    if (horarios.length === 0) { App._toast('Nenhum hor\u00e1rio dispon\u00edvel.', 'warning'); return; }
+    horario = horarios[0].hora;
+  }
+  var a = AgendamentoAssistente.criarAgendamento(data, horario, c.clientName, c.clientId, '', c.professional || '', conversaId);
+  if (a) {
+    App._toast('Agendamento criado: ' + data + ' \u00e0s ' + horario, 'success');
+    this._renderInboxLayout();
+    App.refreshHoje();
+  }
 };
 
 App._showNewConversa = function() {

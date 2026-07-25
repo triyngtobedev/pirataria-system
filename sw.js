@@ -47,6 +47,7 @@ const ASSETS = [
   '/src/modules/comunicacao.js',
   '/src/utils/confirmacao.js',
   '/src/modules/confirmacao.js',
+  '/src/utils/agendamento_assistente.js',
   '/src/components/index.js',
   '/src/components/emptyState.js',
   '/src/components/badge.js',
