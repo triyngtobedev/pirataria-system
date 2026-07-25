@@ -57,6 +57,7 @@ const ASSETS = [
   '/src/components/modal.js',
   '/src/components/table.js',
   '/src/components/card.js',
+  '/src/components/layout.js',
   '/src/repositories/index.js',
   '/src/repositories/clientesRepository.js',
   '/src/repositories/agendaRepository.js',

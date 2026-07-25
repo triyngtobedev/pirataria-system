@@ -12,20 +12,21 @@ App._renderAI = function() {
   var scoreCls = score >= 80 ? 'rp-card-green' : score >= 50 ? 'rp-card-yellow' : 'rp-card-red';
 
   document.getElementById('moduleContent').innerHTML =
-    '<div class="rp-controls"><div class="rp-filters">' +
+    L.controls(
       '<button class="btn btn-sm ' + (this._aiTab === 'prioridades' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'prioridades\')">Prioridades</button>' +
       '<button class="btn btn-sm ' + (this._aiTab === 'oportunidades' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'oportunidades\')">Oportunidades</button>' +
       '<button class="btn btn-sm ' + (this._aiTab === 'alertas' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'alertas\')">Alertas</button>' +
       '<button class="btn btn-sm ' + (this._aiTab === 'todos' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'todos\')">Todos</button>' +
-      '<button class="btn btn-sm ' + (this._aiTab === 'historico' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'historico\')">Hist\u00f3rico</button>' +
-    '</div></div>' +
-    '<div class="rp-grid" style="margin-bottom:18px;">' +
-      '<div class="rp-card ' + scoreCls + '"><span class="rp-num">' + score + '</span><span class="rp-lbl">Score operacional</span></div>' +
-      '<div class="rp-card"><span class="rp-num">' + metrics.total + '</span><span class="rp-lbl">Insights</span></div>' +
-      '<div class="rp-card rp-card-red"><span class="rp-num">' + metrics.prioridades + '</span><span class="rp-lbl">Prioridades</span></div>' +
-      '<div class="rp-card"><span class="rp-num">' + metrics.oportunidades + '</span><span class="rp-lbl">Oportunidades</span></div>' +
-      '<div class="rp-card rp-card-yellow"><span class="rp-num">' + metrics.alertas + '</span><span class="rp-lbl">Alertas</span></div>' +
-    '</div><div id="aiContent"></div>';
+      '<button class="btn btn-sm ' + (this._aiTab === 'historico' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'historico\')">Hist\u00f3rico</button>'
+    ) +
+    L.metrics([
+      { value: score, label: 'Score operacional', cls: scoreCls },
+      { value: metrics.total, label: 'Insights' },
+      { value: metrics.prioridades, label: 'Prioridades', cls: 'rp-card-red' },
+      { value: metrics.oportunidades, label: 'Oportunidades' },
+      { value: metrics.alertas, label: 'Alertas', cls: 'rp-card-yellow' }
+    ]) +
+    '<div id="aiContent"></div>';
   this._renderAITab(insights);
 };
 
@@ -43,7 +44,7 @@ App._renderAITab = function(insights) {
   else filtrados = insights;
 
   if (filtrados.length === 0) {
-    el.innerHTML = C.emptyStateFull({ icon: 'bell', title: 'Nenhum insight encontrado', desc: 'Tudo em ordem por aqui.' });
+    el.innerHTML = L.empty('Nenhum insight encontrado', 'Tudo em ordem por aqui.', 'bell');
     return;
   }
 
@@ -56,7 +57,7 @@ App._renderAITab = function(insights) {
     var acao = '';
     if (i.actionLabel && i.actionTarget) {
       var onclick = i.actionTarget === 'navigate' ? "App.navigate('" + i.actionParams + "')" : i.actionTarget === 'cliente' ? "App.openClientPanel('" + i.actionParams + "')" : "App.navigate('aihub')";
-      acao = '<button class="btn btn-sm" onclick="' + onclick + '">' + App._esc(i.actionLabel) + '</button>';
+      acao = L.btn(i.actionLabel, onclick);
     }
     html += '<div class="rp-card ' + cls + '" style="text-align:left;display:flex;align-items:center;gap:12px;">' +
       '<span style="font-size:1.2rem;">' + icon + '</span>' +
@@ -71,7 +72,7 @@ App._renderAITab = function(insights) {
 App._renderAIHistorico = function(el) {
   var hist = AIHub.getHistory();
   if (hist.length === 0) {
-    el.innerHTML = C.emptyStateFull({ icon: 'clock', title: 'Nenhum hist\u00f3rico', desc: 'O hist\u00f3rico de insights aparecer\u00e1 aqui.' });
+    el.innerHTML = L.empty('Nenhum hist\u00f3rico', 'O hist\u00f3rico de insights aparecer\u00e1 aqui.', 'clock');
     return;
   }
   var html = '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Prioridade</th><th>Insight</th><th>Status</th></tr></thead><tbody>' +

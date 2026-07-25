@@ -13,21 +13,21 @@ App._renderConf = function() {
   if (this._confFiltro === 'hoje') itens = itens.filter(function(i) { return i.isToday; });
   if (this._confFiltro === 'risco') itens = itens.filter(function(i) { return i.prioridade <= 1; });
 
-  var html = '<div class="rp-controls"><div class="rp-filters">' +
+  var html = L.controls(
     '<button class="btn btn-sm ' + (!this._confFiltro ? 'btn-primary' : '') + '" onclick="App._confFiltro=\'\';App._renderConf();">Todos</button>' +
     '<button class="btn btn-sm ' + (this._confFiltro === 'pendentes' ? 'btn-primary' : '') + '" onclick="App._confFiltro=\'pendentes\';App._renderConf();">Pendentes</button>' +
     '<button class="btn btn-sm ' + (this._confFiltro === 'hoje' ? 'btn-primary' : '') + '" onclick="App._confFiltro=\'hoje\';App._renderConf();">Hoje</button>' +
-    '<button class="btn btn-sm ' + (this._confFiltro === 'risco' ? 'btn-primary' : '') + '" onclick="App._confFiltro=\'risco\';App._renderConf();">Risco</button>' +
-  '</div></div>' +
-  '<div class="rp-grid" style="margin-bottom:18px;">' +
-    '<div class="rp-card"><span class="rp-num">' + resumo.total + '</span><span class="rp-lbl">Agendamentos</span></div>' +
-    '<div class="rp-card rp-card-red"><span class="rp-num">' + resumo.pendentes + '</span><span class="rp-lbl">Pendentes</span></div>' +
-    '<div class="rp-card rp-card-yellow"><span class="rp-num">' + resumo.hojeNaoConfirmados + '</span><span class="rp-lbl">Hoje n\u00e3o confirmados</span></div>' +
-    '<div class="rp-card rp-card-red"><span class="rp-num">' + resumo.atrasados + '</span><span class="rp-lbl">Atrasados</span></div>' +
-  '</div>';
+    '<button class="btn btn-sm ' + (this._confFiltro === 'risco' ? 'btn-primary' : '') + '" onclick="App._confFiltro=\'risco\';App._renderConf();">Risco</button>'
+  ) +
+  L.metrics([
+    { value: resumo.total, label: 'Agendamentos' },
+    { value: resumo.pendentes, label: 'Pendentes', cls: 'rp-card-red' },
+    { value: resumo.hojeNaoConfirmados, label: 'Hoje n\u00e3o confirmados', cls: 'rp-card-yellow' },
+    { value: resumo.atrasados, label: 'Atrasados', cls: 'rp-card-red' }
+  ]);
 
   if (itens.length === 0) {
-    html += C.emptyStateFull({ icon: 'calendar', title: 'Tudo confirmado', desc: 'Nenhum agendamento pendente de confirma\u00e7\u00e3o.' });
+    html += L.empty('Tudo confirmado', 'Nenhum agendamento pendente de confirma\u00e7\u00e3o.', 'calendar');
     document.getElementById('moduleContent').innerHTML = html;
     return;
   }
