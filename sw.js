@@ -3,6 +3,7 @@ const ASSETS = [
   '/',
   '/index.html',
   '/style.css',
+  '/src/design-tokens.css',
   '/manifest.json',
   '/favicon.svg',
   '/assets/logo.svg',

@@ -1,40 +1,116 @@
+/* ─── Body Art OS — Design System ───
+   Etapa 1 da migração visual.
+   Tokens centralizados. Arquivo de referência: src/design-tokens.css
+*/
+
 :root {
-  --bg: #0a0a0a;
-  --sidebar: #0d0d0d;
-  --surface: #151515;
-  --surface-2: #1c1c1c;
-  --surface-3: #242424;
-  --border: #222;
-  --border-light: #2a2a2a;
-  --text: #e8e8e8;
-  --text-muted: #6b6b6b;
-  --text-dim: #444;
-  --accent: #b91c1c;
-  --accent-hover: #dc2626;
-  --accent-dim: rgba(185, 28, 28, 0.12);
-  --gold: #c4943a;
-  --gold-light: #d4a84a;
-  --gold-dim: #7a5f20;
-  --gold-dim-2: rgba(196, 148, 58, 0.12);
-  --green: #1a8a4a;
-  --green-hover: #22a85a;
-  --green-dim: rgba(26, 138, 74, 0.12);
-  --yellow: #b8860b;
-  --yellow-hover: #d4a010;
-  --yellow-dim: rgba(184, 134, 11, 0.12);
-  --red: #dc2626;
-  --red-dim: rgba(220, 38, 38, 0.12);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+  /* ─── Cores Base ─── */
+  --color-bg: #0a0a0a;
+  --color-sidebar: #0d0d0d;
+  --color-surface: #151515;
+  --color-surface-2: #1c1c1c;
+  --color-surface-3: #242424;
+  --color-border: #222;
+  --color-border-light: #2a2a2a;
+  --color-text: #e8e8e8;
+  --color-text-muted: #6b6b6b;
+  --color-text-dim: #444;
+  --color-accent: #b91c1c;
+  --color-accent-hover: #dc2626;
+  --color-accent-dim: rgba(185, 28, 28, 0.12);
+  --color-gold: #c4943a;
+  --color-gold-light: #d4a84a;
+  --color-gold-dim: #7a5f20;
+  --color-gold-dim-2: rgba(196, 148, 58, 0.12);
+  --color-green: #1a8a4a;
+  --color-green-hover: #22a85a;
+  --color-green-dim: rgba(26, 138, 74, 0.12);
+  --color-yellow: #b8860b;
+  --color-yellow-hover: #d4a010;
+  --color-yellow-dim: rgba(184, 134, 11, 0.12);
+  --color-red: #dc2626;
+  --color-red-dim: rgba(220, 38, 38, 0.12);
+
+  /* ─── Cores Semânticas ─── */
+  --color-primary: var(--color-accent);
+  --color-primary-hover: var(--color-accent-hover);
+  --color-primary-dim: var(--color-accent-dim);
+  --color-success: var(--color-green);
+  --color-success-dim: var(--color-green-dim);
+  --color-warning: var(--color-yellow);
+  --color-warning-dim: var(--color-yellow-dim);
+  --color-danger: var(--color-red);
+  --color-danger-dim: var(--color-red-dim);
+  --color-info: var(--color-gold);
+  --color-info-dim: var(--color-gold-dim-2);
+
+  /* ─── Sombras ─── */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  /* ─── Raios de Borda ─── */
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
+
+  /* ─── Tipografia ─── */
   --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-display: Georgia, "Times New Roman", serif;
   --font-mono: "SF Mono", "Fira Code", "Consolas", monospace;
+  --font-size-base: 0.875rem;
+  --font-size-xs: 0.6rem;
+  --font-size-sm: 0.72rem;
+  --font-size-md: 0.84rem;
+  --font-size-lg: 1rem;
+  --font-size-xl: 1.25rem;
+
+  /* ─── Layout ─── */
   --sidebar-w: 220px;
+  --content-padding: 28px 32px 60px;
+
+  /* ─── Transição ─── */
   --transition: 0.15s ease;
+
+  /*
+    ─── ALIASES DE COMPATIBILIDADE (código legado usa estes nomes) ───
+    Manter até que todos os módulos migrem para a nomenclatura --color-*
+  */
+  --bg: var(--color-bg);
+  --sidebar: var(--color-sidebar);
+  --surface: var(--color-surface);
+  --surface-2: var(--color-surface-2);
+  --surface-3: var(--color-surface-3);
+  --border: var(--color-border);
+  --border-light: var(--color-border-light);
+  --text: var(--color-text);
+  --text-muted: var(--color-text-muted);
+  --text-dim: var(--color-text-dim);
+  --accent: var(--color-accent);
+  --accent-hover: var(--color-accent-hover);
+  --accent-dim: var(--color-accent-dim);
+  --gold: var(--color-gold);
+  --gold-light: var(--color-gold-light);
+  --gold-dim: var(--color-gold-dim);
+  --gold-dim-2: var(--color-gold-dim-2);
+  --green: var(--color-green);
+  --green-hover: var(--color-green-hover);
+  --green-dim: var(--color-green-dim);
+  --yellow: var(--color-yellow);
+  --yellow-hover: var(--color-yellow-hover);
+  --yellow-dim: var(--color-yellow-dim);
+  --red: var(--color-red);
+  --red-dim: var(--color-red-dim);
+  --btn-primary-bg: var(--color-accent);
+  --btn-primary-border: var(--color-accent);
+  --btn-primary-text: #fff;
+  --badge-font-size: 0.65rem;
+  --card-bg: var(--color-surface);
+  --card-border: 1px solid var(--color-border);
+  --input-bg: var(--color-bg);
+  --input-border: 1px solid var(--color-border);
+  --modal-overlay-bg: rgba(0, 0, 0, 0.65);
+  --sidebar-item-active-bg: var(--color-accent-dim);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
