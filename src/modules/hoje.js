@@ -41,6 +41,12 @@ App._renderHojeAtual = function() {
   var proxPub = igHoje.length > 0 ? igHoje[0].titulo + ' (' + igHoje[0].perfilDestino + ')' : 'Nenhuma';
   var proxAgenda = agendaHoje.length > 0 ? agendaHoje[0].clientName + ' \u00e0s ' + agendaHoje[0].time : 'Nenhum';
   var qtdConversas = conversasSemResp.length;
+  var fluxoAgendamento = 0;
+  var conversasAtivas = DB.getConversas().filter(function(c) { return c.status !== 'encerrada'; });
+  for (var fc = 0; fc < conversasAtivas.length; fc++) {
+    var est = AgendamentoAssistente.getEstadoFluxo(conversasAtivas[fc].id);
+    if (est > 0 && est < 4) fluxoAgendamento++;
+  }
 
   document.getElementById('moduleContent').innerHTML =
     '<div class="hj-wrap">' +
@@ -72,7 +78,7 @@ App._renderHojeAtual = function() {
 
       // Seção 2: Agendamentos
       '<div class="hj-bloco">' +
-        C.sectionHeader('2. Agendamentos', '<span class="hj-contador">' + (pending.length + confirmed.length) + '</span>') +
+        C.sectionHeader('2. Agendamentos', (fluxoAgendamento > 0 ? '<span style="font-size:0.68rem;color:var(--accent-hover);margin-right:8px;">' + fluxoAgendamento + ' em andamento</span>' : '') + '<span class="hj-contador">' + (pending.length + confirmed.length) + '</span>') +
         (agendaHoje.length === 0
           ? C.emptyStateFull({icon:'calendar', title:'Nenhum agendamento hoje', desc:'Os agendamentos aparecer\u00e3o aqui.'})
           : '<div class="hj-card-list">' + agendaHoje.slice(0, 6).map(function(a) {

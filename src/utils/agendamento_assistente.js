@@ -61,6 +61,78 @@ const AgendamentoAssistente = {
     return a;
   },
 
+  // Fluxo de agendamento - estados
+  FLUXO_ESTADOS: [
+    { id: 'info', label: 'Aguardando informa\u00e7\u00f5es' },
+    { id: 'horario', label: 'Escolhendo hor\u00e1rio' },
+    { id: 'definido', label: 'Hor\u00e1rio definido' },
+    { id: 'confirmacao', label: 'Aguardando confirma\u00e7\u00e3o' },
+    { id: 'agendado', label: 'Agendado' },
+    { id: 'sincronizado', label: 'Sincronizado com Google Calendar' },
+    { id: 'falha', label: 'Falha na sincroniza\u00e7\u00e3o' }
+  ],
+
+  getEstadoFluxo: function(conversaId) {
+    var c = DB.getConversa(conversaId);
+    if (!c) return 0;
+
+    // Verificar se há agendamento vinculado
+    var apps = [];
+    if (c.clientId) {
+      apps = DB.getAppointments().filter(function(a) { return a.clientId === c.clientId; }).sort(function(a, b) { return (b.createdAt || '') > (a.createdAt || '') ? 1 : -1; });
+    } else {
+      apps = DB.getAppointments().filter(function(a) { return a.clientName === c.clientName; }).sort(function(a, b) { return (b.createdAt || '') > (a.createdAt || '') ? 1 : -1; });
+    }
+
+    if (apps.length === 0) {
+      // Verificar se já iniciamos o fluxo
+      var msgs = DB.getMensagens(conversaId);
+      var temOferta = msgs.some(function(m) { return m.content && (m.content.indexOf('hor\u00e1rios dispon\u00edveis') >= 0 || m.content.indexOf('agendamento criado') >= 0); });
+      return temOferta ? 1 : 0; // info ou iniciando
+    }
+
+    var ultimoApp = apps[0];
+    if (ultimoApp.status === 'confirmed') return 4; // agendado
+    if (ultimoApp.status === 'pending') return 3; // aguardando confirmação
+    return 4;
+  },
+
+  getEstadoLabel: function(estadoIdx) {
+    return this.FLUXO_ESTADOS[estadoIdx] ? this.FLUXO_ESTADOS[estadoIdx].label : 'Desconhecido';
+  },
+
+  getTimelineHtml: function(conversaId) {
+    var estadoAtual = this.getEstadoFluxo(conversaId);
+    var html = '<div style="display:flex;flex-direction:column;gap:4px;padding:4px 0;">';
+    for (var i = 0; i < this.FLUXO_ESTADOS.length; i++) {
+      var e = this.FLUXO_ESTADOS[i];
+      var concluido = i < estadoAtual;
+      var atual = i === estadoAtual;
+      var cls = concluido ? 'badge badge-completed' : atual ? 'badge badge-progress' : 'badge badge-cancelled';
+      var icon = concluido ? '\u2713' : atual ? '\u25B6' : '\u25CB';
+      if (e.id === 'falha') continue; // só exibir se em falha
+      html += '<div style="display:flex;align-items:center;gap:6px;font-size:0.74rem;padding:2px 0;">' +
+        '<span style="color:' + (concluido ? 'var(--green)' : atual ? 'var(--gold)' : 'var(--text-dim)') + ';">' + icon + '</span>' +
+        '<span style="color:' + (atual ? 'var(--text)' : concluido ? 'var(--text-muted)' : 'var(--text-dim)') + ';">' + e.label + '</span>' +
+      '</div>';
+    }
+    html += '</div>';
+    return html;
+  },
+
+  getServicoFromConversa: function(conversaId) {
+    var msgs = DB.getMensagens(conversaId);
+    for (var i = msgs.length - 1; i >= 0; i--) {
+      var txt = (msgs[i].content || '').toLowerCase();
+      // Procurar por serviços conhecidos
+      var servicos = Repos.studio.services.active();
+      for (var j = 0; j < servicos.length; j++) {
+        if (txt.indexOf(servicos[j].name.toLowerCase()) >= 0) return servicos[j].name;
+      }
+    }
+    return '';
+  },
+
   getMensagensProntas: function(horarios, data, clientName, servico) {
     var msgs = [];
     var settings = Repos.studio.settings.get();

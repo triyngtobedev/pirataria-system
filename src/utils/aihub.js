@@ -260,7 +260,14 @@ const AIHub = {
     var hoje = DB._today();
     var conversas = DB.getConversas().filter(function(c) { return c.status !== 'encerrada'; });
     var solicitacoes = 0;
+    var fluxoParado = 0;
+    var aguardandoCliente = 0;
+
     for (var i = 0; i < conversas.length; i++) {
+      var estado = AgendamentoAssistente.getEstadoFluxo(conversas[i].id);
+      if (estado > 0 && estado < 4) fluxoParado++;
+      if (estado === 3) aguardandoCliente++;
+
       var msgs = DB.getMensagens(conversas[i].id);
       for (var j = 0; j < msgs.length; j++) {
         if (msgs[j].type === 'recebida' && AgendamentoAssistente.detectarIntencao(msgs[j].content)) {
@@ -269,9 +276,17 @@ const AIHub = {
         }
       }
     }
+
     if (solicitacoes > 0) {
       insights.push(AIHub._make('alerta', 'agendamento', 1, solicitacoes + ' solicita\u00e7\u00e3o' + (solicitacoes !== 1 ? '\u00f5es' : '') + ' de agendamento aguardando', 'Clientes demonstraram interesse em agendar. Ofere\u00e7a hor\u00e1rios dispon\u00edveis.', 'inbox', null, 'Ver conversas', 'navigate', 'inbox'));
     }
+    if (fluxoParado > 0) {
+      insights.push(AIHub._make('alerta', 'agendamento', 1, fluxoParado + ' solicita\u00e7\u00e3o' + (fluxoParado !== 1 ? '\u00f5es' : '') + ' de agendamento parada' + (fluxoParado !== 1 ? 's' : ''), 'Clientes no meio do fluxo de agendamento aguardando resposta.', 'inbox', null, 'Ver fluxo', 'navigate', 'inbox'));
+    }
+    if (aguardandoCliente > 0) {
+      insights.push(AIHub._make('info', 'agendamento', 2, aguardandoCliente + ' agendamento' + (aguardandoCliente !== 1 ? 's' : '') + ' aguardando resposta do cliente', 'Hor\u00e1rio definido mas cliente ainda n\u00e3o confirmou.', 'agenda', null, 'Ver agenda', 'navigate', 'agenda'));
+    }
+
     var hojeApps = DB.getAppointmentsByDate(hoje);
     var criadosHoje = hojeApps.filter(function(a) {
       return a.createdAt && a.createdAt.slice(0, 10) === hoje;

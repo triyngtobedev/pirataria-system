@@ -212,6 +212,18 @@ App._renderConversaDetail = function(c) {
 
     assistenteHtml +
 
+    // Timeline do fluxo de agendamento
+    (AgendamentoAssistente.getEstadoFluxo(c.id) > 0
+      ? '<div class="inb-section" style="background:var(--surface-2);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:10px 12px;margin-bottom:16px;">' +
+        '<div class="inb-section-title" style="border:none;padding:0;margin-bottom:6px;">\uD83D\uDCC5 Fluxo de Agendamento</div>' +
+        '<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;">Etapa atual: <strong>' + AgendamentoAssistente.getEstadoLabel(AgendamentoAssistente.getEstadoFluxo(c.id)) + '</strong></div>' +
+        AgendamentoAssistente.getTimelineHtml(c.id) +
+        '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border-light);display:flex;flex-wrap:wrap;gap:4px;">' +
+          '<button class="btn btn-sm" style="font-size:0.68rem;" onclick="App.navigate(\'agenda\')">Ver na agenda</button>' +
+        '</div>' +
+      '</div>'
+      : '') +
+
     '<div class="inb-section"><div class="inb-section-title">Pr\u00f3xima a\u00e7\u00e3o</div>' +
       '<div class="inb-nextaction">' +
         '<div class="form-group" style="margin-bottom:6px;"><input type="text" id="inbDetailAction" value="' + this._esc(c.nextAction || '') + '" placeholder="Ex: Enviar or\u00e7amento"></div>' +
