@@ -27,6 +27,19 @@ const App = {
     this.bindNav();
     if (typeof Notificacao !== 'undefined') Notificacao._updateBadge();
     this._updateVersionDisplay();
+    if (typeof FechamentoDia !== 'undefined' && FechamentoDia.precisaAuditar()) {
+      var resumo = FechamentoDia.auditar();
+      if (resumo) {
+        var pends = Object.keys(resumo.pendencias).filter(function(k) { return resumo.pendencias[k] > 0; }).length;
+        var total = Object.keys(resumo.realizacoes).reduce(function(s, k) { return s + resumo.realizacoes[k]; }, 0);
+        if (total > 0 || pends > 0) {
+          var self = this;
+          setTimeout(function() {
+            self._showFechamentoResumo(resumo);
+          }, 800);
+        }
+      }
+    }
     if (typeof Onboarding !== 'undefined' && !Onboarding.isComplete()) {
       if (typeof App.renderOnboarding === 'function') {
         App.renderOnboarding();
@@ -208,6 +221,36 @@ const App = {
     Repos.studio.settings.save(data);
     this._closeOverlay();
     App._toast('Est\u00fadio configurado com sucesso!', 'success');
+  },
+
+  _showFechamentoResumo: function(resumo) {
+    if (!resumo) return;
+    var html = '<div class="os-detail">' +
+      '<div class="os-detail-row"><span class="os-detail-label">Data</span><span class="os-detail-value">' + resumo.data + '</span></div>' +
+      '<div class="os-detail-row"><span class="os-detail-label">Atendimentos</span><span class="os-detail-value">' + resumo.realizacoes.atendimentosRealizados + '</span></div>' +
+      '<div class="os-detail-row"><span class="os-detail-label">Agendamentos</span><span class="os-detail-value">' + resumo.realizacoes.agendamentosCriados + '</span></div>' +
+      '<div class="os-detail-row"><span class="os-detail-label">Cancelamentos</span><span class="os-detail-value">' + resumo.realizacoes.cancelamentos + '</span></div>' +
+      '<div class="os-detail-row"><span class="os-detail-label">Recebido</span><span class="os-detail-value">R$ ' + resumo.realizacoes.totalRecebido.toFixed(2).replace('.', ',') + '</span></div>' +
+      '<div class="os-detail-row"><span class="os-detail-label">Tarefas conclu\u00eddas</span><span class="os-detail-value">' + resumo.tarefas.concluidas + '</span></div>' +
+      '<div class="os-detail-row"><span class="os-detail-label">Transferidas</span><span class="os-detail-value">' + resumo.tarefas.transferidas + '</span></div>' +
+    '</div>';
+    var pends = Object.keys(resumo.pendencias).filter(function(k) { return resumo.pendencias[k] > 0; });
+    if (pends.length > 0) {
+      html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);"><strong>Pend\u00eancias transferidas:</strong></div>';
+      pends.forEach(function(k) {
+        var labels = { mensagensSemResposta: 'WhatsApp', confirmacoesPendentes: 'Confirma\u00e7\u00f5es', preAgendamentosNaoConcluidos: 'Pr\u00e9-agendamentos', followUpsVencidos: 'Follow-ups', pagamentosPendentes: 'Pagamentos', posAtendimentosPendentes: 'P\u00f3s-atendimentos', oportunidadesSemAcao: 'Oportunidades', publicacoesNaoRealizadas: 'Publica\u00e7\u00f5es', notificacoesCriticasAbertas: 'Notifica\u00e7\u00f5es' };
+        html += '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.82rem;border-bottom:1px solid var(--border-light);"><span>' + (labels[k] || k) + '</span><span>' + resumo.pendencias[k] + '</span></div>';
+      });
+    }
+    var plano = FechamentoDia.getPlanoProximoDia();
+    if (plano && plano.pendenciasTransferidas && plano.pendenciasTransferidas.length > 0) {
+      html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);"><strong>Plano do dia seguinte:</strong></div>';
+      plano.pendenciasTransferidas.forEach(function(p) {
+        html += '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:0.78rem;color:var(--text-muted);"><span>' + p.label + '</span><span>' + p.quantidade + '</span></div>';
+      });
+    }
+    html += '<div class="overlay-actions" style="margin-top:16px;"><button class="btn btn-primary" onclick="App._closeOverlay()">Iniciar dia</button></div>';
+    this._showOverlay('Resumo do dia anterior', html);
   },
 
   bindNav() {
