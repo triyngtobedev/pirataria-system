@@ -68,9 +68,22 @@ App._onInboxSearch = function() {
 
 App._usarRespostaRapida = function(conversaId, texto) {
   Inbox.addMensagem(conversaId, 'enviada', texto);
-  App._toast('Resposta r\u00e1pida registrada.', 'success');
-  this._renderInboxLayout();
-  App.refreshHoje();
+  // Enviar via WhatsApp se configurado
+  var wppStatus = WhatsApp.getStatus();
+  if (wppStatus.configured && wppStatus.connected) {
+    WhatsApp.sendFromInbox(conversaId, texto).then(function() {
+      App._toast('Resposta enviada pelo WhatsApp.', 'success');
+      App._renderInboxLayout();
+      App.refreshHoje();
+    }).catch(function(err) {
+      App._toast('Resposta registrada, mas falha ao enviar WhatsApp: ' + (err.message || ''), 'warning');
+      App._renderInboxLayout();
+    });
+  } else {
+    App._toast('Resposta r\u00e1pida registrada.', 'success');
+    this._renderInboxLayout();
+    App.refreshHoje();
+  }
 };
 
 App._renderConversaItem = function(c, selected) {
@@ -128,6 +141,16 @@ App._renderConversaDetail = function(c) {
       var crm = CRM.getClientCRM(cl);
       crmInfo = '<div class="inb-crm-info"><strong>Pipeline:</strong> ' + crm.statusLabel + (crm.nextAction ? ' \u2022 <strong>Pr\u00f3ximo:</strong> ' + this._esc(crm.nextAction) : '') + '</div>';
     }
+  }
+
+  // WhatsApp connection status
+  var wppStatus = WhatsApp.getStatus();
+  var wppInfo = '';
+  if (c.origin === 'whatsapp' || (c.phone && wppStatus.configured)) {
+    wppInfo = '<div class="inb-crm-info" style="margin-top:4px;">' +
+      (wppStatus.connected ? '<span style="color:var(--green);">\u2713 WhatsApp conectado</span>' : '<span style="color:var(--accent-hover);">\u26A0 WhatsApp desconectado</span>') +
+      (wppStatus.ultimaSincronizacao ? ' \u2022 Sinc: ' + new Date(wppStatus.ultimaSincronizacao).toLocaleString('pt-BR') : '') +
+    '</div>';
   }
 
   var msgHtml = msgs.length === 0
@@ -208,6 +231,7 @@ App._renderConversaDetail = function(c) {
       '<div class="inb-detail-meta">' + origemLabel + ' \u2022 ' + statusLabel + (c.phone ? ' \u2022 ' + this._esc(c.phone) : '') + '</div>' +
       (clientLink ? '<div style="margin-top:4px;">' + clientLink + '</div>' : '') +
       crmInfo +
+      wppInfo +
     '</div>' +
 
     assistenteHtml +

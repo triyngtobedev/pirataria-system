@@ -209,6 +209,15 @@ const AIHub = {
 
   // ─── Coletores públicos ───
 
+  _analiseWhatsAppIntegration: function() {
+    var insights = [];
+    var wppInsights = typeof WhatsApp.getInsights === 'function' ? WhatsApp.getInsights() : [];
+    wppInsights.forEach(function(i) {
+      insights.push(AIHub._make(i.tipo, i.modulo, i.prioridade, i.titulo, i.descricao, i.modulo, null, i.acao, 'navigate', i.alvo));
+    });
+    return insights;
+  },
+
   _analiseGoogleCalendar: function() {
     var insights = [];
     var status = GoogleCalendar.getSyncStatus();
@@ -393,6 +402,7 @@ const AIHub = {
   collect: function() {
     return [].concat(
       this._analiseOnboarding(),
+      this._analiseWhatsAppIntegration(),
       this._analiseGoogleCalendar(),
       this._analiseInstagram(),
       this._analiseAgendamento(),

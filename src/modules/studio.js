@@ -5,6 +5,8 @@ App.renderStudio = function() {
   const servs = Repos.studio.services.list();
   const hours = Repos.studio.hours.get();
   const dayLabels = { mon: 'Seg', tue: 'Ter', wed: 'Qua', thu: 'Qui', fri: 'Sex', sat: 'Sáb', sun: 'Dom' };
+  const wConfig = WhatsApp.getConfig();
+  const wStatus = WhatsApp.getStatus();
 
   container.innerHTML = `
     <div class="module-section">
@@ -98,6 +100,40 @@ App.renderStudio = function() {
         </div>
         <div class="form-group"><label>Sobre</label><textarea id="cfgAbout" rows="3">${this._esc(s.about)}</textarea></div>
         <button class="btn btn-primary btn-sm mt-12" onclick="App.saveStudio()">Salvar informações</button>
+      </div>
+    </div>
+
+    <div class="module-section">
+      <div class="section-title">WhatsApp (Evolution API)</div>
+      <div class="card">
+        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px;line-height:1.5;">
+          Conecte o WhatsApp utilizando Evolution API. As conversas ser\u00e3o sincronizadas automaticamente com o Inbox.
+        </p>
+        <div class="form-group"><label>URL da API</label>
+          <input type="text" id="cfgWppUrl" value="${this._esc(wConfig.apiUrl || '')}" placeholder="https://sua-evolution-api.com">
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>API Key</label>
+            <input type="password" id="cfgWppKey" value="${this._esc(wConfig.apiKey || '')}" placeholder="Chave da API">
+          </div>
+          <div class="form-group"><label>Nome da inst\u00e2ncia</label>
+            <input type="text" id="cfgWppInstance" value="${this._esc(wConfig.instanceName || '')}" placeholder="Ex: bodyart">
+          </div>
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px;">
+          ${wStatus.configured
+            ? (wStatus.connected
+              ? '<span style="color:var(--green);">\u2713 Conectado</span>'
+              : '<span style="color:var(--accent-hover);">\u26A0 Desconectado</span>')
+            : '<span style="color:var(--text-dim);">\u25CB N\u00e3o configurado</span>'}
+          ${wStatus.ultimaSincronizacao ? ' \u2022 \u00daltima sinc: ' + new Date(wStatus.ultimaSincronizacao).toLocaleString('pt-BR') : ''}
+          ${wStatus.totalImportadas > 0 ? ' \u2022 ' + wStatus.totalImportadas + ' conversas importadas' : ''}
+        </div>
+        <div class="flex gap-8">
+          <button class="btn btn-primary btn-sm" onclick="App._saveWppConfig()">Salvar</button>
+          <button class="btn btn-sm" onclick="App._testWppConnection()">Testar conex\u00e3o</button>
+          ${wStatus.configured ? '<button class="btn btn-sm" onclick="App._syncWppMessages()">Sincronizar</button>' : ''}
+        </div>
       </div>
     </div>
 
@@ -315,6 +351,44 @@ App.saveStudio = function() {
   });
   App._toast('Informações salvas.', 'success');
   this.renderStudio();
+};
+
+// ─── WhatsApp ───
+App._saveWppConfig = function() {
+  WhatsApp.saveConfig({
+    apiUrl: document.getElementById('cfgWppUrl').value.trim(),
+    apiKey: document.getElementById('cfgWppKey').value.trim(),
+    instanceName: document.getElementById('cfgWppInstance').value.trim()
+  });
+  App._toast('Configura\u00e7\u00e3o WhatsApp salva.', 'success');
+  this.renderStudio();
+};
+
+App._testWppConnection = function() {
+  var url = document.getElementById('cfgWppUrl').value.trim();
+  var key = document.getElementById('cfgWppKey').value.trim();
+  var inst = document.getElementById('cfgWppInstance').value.trim();
+  if (!url || !key || !inst) { App._toast('Preencha URL, API Key e Inst\u00e2ncia.', 'warning'); return; }
+  WhatsApp.saveConfig({ apiUrl: url, apiKey: key, instanceName: inst });
+  App._toast('Testando conex\u00e3o...', 'info');
+  WhatsApp.testConnection().then(function(connected) {
+    if (connected) { App._toast('Conex\u00e3o OK! WhatsApp conectado.', 'success'); }
+    else { App._toast('Inst\u00e2ncia desconectada. Verifique o WhatsApp.', 'warning'); }
+    App.renderStudio();
+  }).catch(function(err) {
+    App._toast('Erro de conex\u00e3o: ' + (err.message || 'erro'), 'error');
+  });
+};
+
+App._syncWppMessages = function() {
+  App._toast('Sincronizando mensagens...', 'info');
+  WhatsApp.syncMessages().then(function(count) {
+    App._toast(count + ' conversa' + (count !== 1 ? 's' : '') + ' importada' + (count !== 1 ? 's' : '') + '.', 'success');
+    App.renderStudio();
+    App.refreshHoje();
+  }).catch(function(err) {
+    App._toast('Erro na sincroniza\u00e7\u00e3o.', 'error');
+  });
 };
 
 // ─── Backup ───
