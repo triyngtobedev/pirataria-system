@@ -77,10 +77,8 @@
     Manter até que todos os módulos migrem para a nomenclatura --color-*
   */
   --bg: var(--color-bg);
-  --sidebar: var(--color-sidebar);
   --surface: var(--color-surface);
   --surface-2: var(--color-surface-2);
-  --surface-3: var(--color-surface-3);
   --border: var(--color-border);
   --border-light: var(--color-border-light);
   --text: var(--color-text);
@@ -90,15 +88,11 @@
   --accent-hover: var(--color-accent-hover);
   --accent-dim: var(--color-accent-dim);
   --gold: var(--color-gold);
-  --gold-light: var(--color-gold-light);
   --gold-dim: var(--color-gold-dim);
   --gold-dim-2: var(--color-gold-dim-2);
   --green: var(--color-green);
-  --green-hover: var(--color-green-hover);
   --green-dim: var(--color-green-dim);
   --yellow: var(--color-yellow);
-  --yellow-hover: var(--color-yellow-hover);
-  --yellow-dim: var(--color-yellow-dim);
   --red: var(--color-red);
   --red-dim: var(--color-red-dim);
   --btn-primary-bg: var(--color-accent);
@@ -110,7 +104,6 @@
   --input-bg: var(--color-bg);
   --input-border: 1px solid var(--color-border);
   --modal-overlay-bg: rgba(0, 0, 0, 0.65);
-  --sidebar-item-active-bg: var(--color-accent-dim);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

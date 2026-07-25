@@ -1,215 +1,74 @@
-/* ─── Body Art OS — Design Tokens ───
+/* ═══════════════════════════════════════════════════════════════
+   Body Art OS — Design Tokens (Referência)
+   ═══════════════════════════════════════════════════════════════
    Versão: 1.0.0
-   Etapa 1 da migração visual.
-   Centraliza todos os tokens de design em um único arquivo.
-   Consumido por style.css via @import ou manualmente.
+   Este arquivo é uma referência documentada dos tokens de design.
+   As variáveis estão definidas em style.css :root.
+   Consulte este arquivo para entender a nomenclatura e o propósito
+   de cada token.
+
+   Convenção de nomenclatura:
+     --color-{nome}     → Cores base e semânticas
+     --shadow-{tamanho} → Sombras (sm, md, lg)
+     --radius-{tamanho} → Raios de borda (sm, md, lg)
+     --font-*           → Tipografia
+     --space-{n}        → Espaçamentos (escala 4px)
+     --{componente}-*   → Tokens específicos de componentes
+     --btn-*            → Botões
+     --input-*          → Inputs e formulários
+     --badge-*          → Badges
+     --card-*           → Cards
+     --table-*          → Tabelas
+     --modal-*          → Modais
+     --header-*         → Header
+     --sidebar-*        → Sidebar
+     --notif-*          → Notificações
+     --grid-*           → Grids
+     --section-*        → Seções de módulo
+     --transition-*     → Transições
+
+   ═══════════════════════════════════════════════════════════════
+   Paleta de Cores
+   ═══════════════════════════════════════════════════════════════
+
+   Background:    #0a0a0a (bg), #0d0d0d (sidebar), #151515 (surface)
+                  #1c1c1c (surface-2), #242424 (surface-3)
+   Texto:         #e8e8e8 (text), #6b6b6b (muted), #444 (dim)
+   Bordas:        #222 (border), #2a2a2a (border-light)
+   Accent (red):  #b91c1c → #dc2626 (hover)
+   Gold:          #c4943a → #d4a84a (light)
+   Green:         #1a8a4a → #22a85a (hover)
+   Yellow:        #b8860b → #d4a010 (hover)
+   Red:           #dc2626
+
+   ═══════════════════════════════════════════════════════════════
+   Tipografia
+   ═══════════════════════════════════════════════════════════════
+
+   Principal: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif
+   Display:   Georgia, Times New Roman, serif
+   Monospace: SF Mono, Fira Code, Consolas, monospace
+   Base:      0.875rem (14px)
+   Escala:    xs 0.6rem · sm 0.72rem · md 0.84rem · lg 1rem · xl 1.25rem
+
+   ═══════════════════════════════════════════════════════════════
+   Espaçamentos
+   ═══════════════════════════════════════════════════════════════
+
+   Escala baseada em 4px:
+   1 (4px) · 2 (8px) · 3 (12px) · 4 (16px) · 5 (20px) · 6 (24px)
+   8 (32px) · 10 (40px) · 12 (48px)
+
+   ═══════════════════════════════════════════════════════════════
+   Componentes
+   ═══════════════════════════════════════════════════════════════
+
+   Botões:    padding 8px 16px · border-radius 4px · font-size 0.78rem
+   Inputs:    bg #0a0a0a · border #222 · padding 8px 10px · font-size 0.84rem
+   Badges:    font-size 0.65rem · padding 2px 8px · border-radius 3px · uppercase
+   Cards:     bg #151515 · border #222 · border-radius 6px · padding 20px
+   Tabelas:   header 0.68rem uppercase · cell padding 10px 12px · font-size 0.84rem
+   Modais:    bg #151515 · border #222 · border-radius 8px · padding 24px
+   Sidebar:   220px width · bg #0d0d0d · item padding 9px 20px
+   Sombras:   sm 0 1px 3px · md 0 4px 12px · lg 0 8px 24px (rgba 0,0,0,0.3-0.5)
 */
-
-:root {
-  /* ─── Cores Base ─── */
-  --color-bg: #0a0a0a;
-  --color-sidebar: #0d0d0d;
-  --color-surface: #151515;
-  --color-surface-2: #1c1c1c;
-  --color-surface-3: #242424;
-
-  /* ─── Bordas ─── */
-  --color-border: #222;
-  --color-border-light: #2a2a2a;
-
-  /* ─── Texto ─── */
-  --color-text: #e8e8e8;
-  --color-text-muted: #6b6b6b;
-  --color-text-dim: #444;
-
-  /* ─── Accent (Vermelho) ─── */
-  --color-accent: #b91c1c;
-  --color-accent-hover: #dc2626;
-  --color-accent-dim: rgba(185, 28, 28, 0.12);
-
-  /* ─── Gold (Destaque) ─── */
-  --color-gold: #c4943a;
-  --color-gold-light: #d4a84a;
-  --color-gold-dim: #7a5f20;
-  --color-gold-dim-2: rgba(196, 148, 58, 0.12);
-
-  /* ─── Verde (Sucesso) ─── */
-  --color-green: #1a8a4a;
-  --color-green-hover: #22a85a;
-  --color-green-dim: rgba(26, 138, 74, 0.12);
-
-  /* ─── Amarelo (Aviso) ─── */
-  --color-yellow: #b8860b;
-  --color-yellow-hover: #d4a010;
-  --color-yellow-dim: rgba(184, 134, 11, 0.12);
-
-  /* ─── Vermelho (Erro/Perigo) ─── */
-  --color-red: #dc2626;
-  --color-red-dim: rgba(220, 38, 38, 0.12);
-
-  /* ─── Cores Semânticas (mapeamento para estados) ─── */
-  --color-success: var(--color-green);
-  --color-success-hover: var(--color-green-hover);
-  --color-success-dim: var(--color-green-dim);
-  --color-warning: var(--color-yellow);
-  --color-warning-hover: var(--color-yellow-hover);
-  --color-warning-dim: var(--color-yellow-dim);
-  --color-danger: var(--color-red);
-  --color-danger-dim: var(--color-red-dim);
-  --color-info: var(--color-gold);
-  --color-info-dim: var(--color-gold-dim-2);
-  --color-primary: var(--color-accent);
-  --color-primary-hover: var(--color-accent-hover);
-  --color-primary-dim: var(--color-accent-dim);
-
-  /* ─── Sombras ─── */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-
-  /* ─── Raios de Borda ─── */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-
-  /* ─── Tipografia ─── */
-  --font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-display: Georgia, "Times New Roman", serif;
-  --font-mono: "SF Mono", "Fira Code", "Consolas", monospace;
-  --font-size-base: 0.875rem;
-  --font-size-xs: 0.6rem;
-  --font-size-sm: 0.72rem;
-  --font-size-md: 0.84rem;
-  --font-size-lg: 1rem;
-  --font-size-xl: 1.25rem;
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-  --line-height-base: 1.6;
-
-  /* ─── Espaçamentos ─── */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
-
-  /* ─── Layout ─── */
-  --sidebar-w: 220px;
-  --sidebar-w-collapsed: 56px;
-  --content-padding: 28px 32px 60px;
-  --content-max-width: 720px;
-
-  /* ─── Transições ─── */
-  --transition-fast: 0.1s ease;
-  --transition-base: 0.15s ease;
-  --transition-slow: 0.25s ease;
-
-  /* ─── Componente: Botões ─── */
-  --btn-padding: 8px 16px;
-  --btn-padding-sm: 5px 11px;
-  --btn-font-size: 0.78rem;
-  --btn-font-size-sm: 0.72rem;
-  --btn-border-radius: var(--radius-sm);
-  --btn-border-width: 1px;
-  --btn-gap: 6px;
-  --btn-primary-bg: var(--color-accent);
-  --btn-primary-border: var(--color-accent);
-  --btn-primary-text: #fff;
-  --btn-primary-hover-bg: var(--color-accent-hover);
-  --btn-success-text: var(--color-green);
-  --btn-warning-text: var(--color-yellow);
-  --btn-danger-text: var(--color-red);
-
-  /* ─── Componente: Inputs ─── */
-  --input-bg: var(--color-bg);
-  --input-border: 1px solid var(--color-border);
-  --input-border-radius: var(--radius-sm);
-  --input-padding: 8px 10px;
-  --input-font-size: 0.84rem;
-  --input-focus-border: var(--color-gold-dim);
-  --input-focus-shadow: 0 0 0 2px var(--color-gold-dim-2);
-  --input-placeholder-color: #3a3a3a;
-  --label-font-size: 0.68rem;
-  --label-letter-spacing: 0.06em;
-
-  /* ─── Componente: Badges ─── */
-  --badge-font-size: 0.65rem;
-  --badge-font-weight: 500;
-  --badge-padding: 2px 8px;
-  --badge-border-radius: 3px;
-  --badge-letter-spacing: 0.03em;
-  --badge-scheduled-bg: var(--color-yellow-dim);
-  --badge-scheduled-text: var(--color-yellow);
-  --badge-confirmed-bg: var(--color-accent-dim);
-  --badge-confirmed-text: var(--color-accent-hover);
-  --badge-completed-bg: var(--color-green-dim);
-  --badge-completed-text: var(--color-green);
-  --badge-cancelled-bg: var(--color-red-dim);
-  --badge-cancelled-text: var(--color-red);
-  --badge-progress-bg: var(--color-accent-dim);
-  --badge-progress-text: var(--color-accent-hover);
-  --badge-waiting-bg: var(--color-yellow-dim);
-  --badge-waiting-text: var(--color-yellow);
-
-  /* ─── Componente: Cards ─── */
-  --card-bg: var(--color-surface);
-  --card-border: 1px solid var(--color-border);
-  --card-border-radius: var(--radius-md);
-  --card-padding: 20px;
-  --card-margin-bottom: 16px;
-  --card-hover-border: var(--color-border-light);
-
-  /* ─── Componente: Tabelas ─── */
-  --table-header-font-size: 0.68rem;
-  --table-header-padding: 10px 12px;
-  --table-cell-padding: 10px 12px;
-  --table-cell-font-size: 0.84rem;
-  --table-row-hover: rgba(255, 255, 255, 0.015);
-
-  /* ─── Componente: Modais ─── */
-  --modal-overlay-bg: rgba(0, 0, 0, 0.65);
-  --modal-bg: var(--color-surface);
-  --modal-border: 1px solid var(--color-border);
-  --modal-border-radius: var(--radius-lg);
-  --modal-padding: 24px;
-  --modal-min-width: 360px;
-  --modal-max-width: 480px;
-  --modal-max-height: 85vh;
-
-  /* ─── Componente: Sidebar ─── */
-  --sidebar-bg: var(--color-sidebar);
-  --sidebar-border: 1px solid var(--color-border);
-  --sidebar-item-padding: 9px 20px;
-  --sidebar-item-gap: 10px;
-  --sidebar-item-font-size: 0.78rem;
-  --sidebar-item-active-bg: var(--color-accent-dim);
-  --sidebar-item-active-border: 2px solid var(--color-accent);
-
-  /* ─── Componente: Header ─── */
-  --header-border-bottom: 1px solid var(--color-border);
-  --header-title-font-size: 1.05rem;
-  --header-margin-bottom: 28px;
-
-  /* ─── Componente: Notificações ─── */
-  --notif-prio-critica: var(--color-red);
-  --notif-prio-alta: var(--color-yellow);
-  --notif-prio-media: var(--color-gold-dim);
-  --notif-prio-baixa: var(--color-border);
-
-  /* ─── Componente: Grid ─── */
-  --grid-gap-sm: 8px;
-  --grid-gap-md: 12px;
-  --grid-gap-lg: 16px;
-  --grid-min-col: 160px;
-
-  /* ─── Seção de módulo ─── */
-  --section-margin-bottom: 32px;
-  --section-title-font-size: 0.7rem;
-  --section-title-letter-spacing: 0.08em;
-}
