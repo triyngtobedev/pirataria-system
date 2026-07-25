@@ -79,10 +79,22 @@ App.renderStudio = function() {
       <div class="section-title">Informações do Studio</div>
       <div class="card">
         <div class="form-group"><label>Nome do estúdio</label><input type="text" id="cfgName" value="${this._esc(s.studioName)}"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Nome fantasia</label><input type="text" id="cfgFantasia" value="${this._esc(s.fantasia || '')}"></div>
+          <div class="form-group"><label>CNPJ</label><input type="text" id="cfgCnpj" value="${this._esc(s.cnpj || '')}"></div>
+        </div>
         <div class="form-group"><label>Endereço</label><input type="text" id="cfgAddress" value="${this._esc(s.address)}"></div>
         <div class="form-row">
+          <div class="form-group"><label>Cidade / UF</label><input type="text" id="cfgCity" value="${this._esc(s.city || '')}"></div>
           <div class="form-group"><label>Telefone</label><input type="text" id="cfgPhone" value="${this._esc(s.phone)}"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>WhatsApp</label><input type="text" id="cfgWhatsapp" value="${this._esc(s.whatsapp || '')}"></div>
           <div class="form-group"><label>Instagram</label><input type="text" id="cfgInsta" value="${this._esc(s.instagram)}"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>E-mail</label><input type="text" id="cfgEmail" value="${this._esc(s.email || '')}"></div>
+          <div class="form-group"><label>Horário de funcionamento</label><input type="text" id="cfgHours" value="${this._esc(s.businessHours || '')}" placeholder="Ex: Seg-Sex 10h-19h, Sáb 10h-17h"></div>
         </div>
         <div class="form-group"><label>Sobre</label><textarea id="cfgAbout" rows="3">${this._esc(s.about)}</textarea></div>
         <button class="btn btn-primary btn-sm mt-12" onclick="App.saveStudio()">Salvar informações</button>
@@ -265,9 +277,15 @@ App.saveStudio = function() {
   ])) return;
   Repos.studio.settings.save({
     studioName: document.getElementById('cfgName').value.trim(),
+    fantasia: document.getElementById('cfgFantasia').value.trim(),
+    cnpj: document.getElementById('cfgCnpj').value.trim(),
     address: document.getElementById('cfgAddress').value.trim(),
+    city: document.getElementById('cfgCity').value.trim(),
     phone: document.getElementById('cfgPhone').value.trim(),
+    whatsapp: document.getElementById('cfgWhatsapp').value.trim(),
     instagram: document.getElementById('cfgInsta').value.trim(),
+    email: document.getElementById('cfgEmail').value.trim(),
+    businessHours: document.getElementById('cfgHours').value.trim(),
     about: document.getElementById('cfgAbout').value.trim()
   });
   App._toast('Informações salvas.', 'success');

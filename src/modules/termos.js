@@ -53,19 +53,39 @@ App._viewTermo = function(id) {
       <div class="os-detail-row"><span class="os-detail-label">Status</span><span class="os-detail-value">${C.badge(t.status === 'signed' ? 'Assinado' : 'Pendente', t.status === 'signed' ? 'completed' : 'scheduled')}</span></div>
       <div class="os-detail-row"><span class="os-detail-label">Criado em</span><span class="os-detail-value">${t.createdAt ? t.createdAt.slice(0, 19).replace('T', ' ') : '—'}</span></div>
       ${t.signedAt ? '<div class="os-detail-row"><span class="os-detail-label">Assinado em</span><span class="os-detail-value">' + t.signedAt.slice(0, 19).replace('T', ' ') + '</span></div>' : ''}
+      <div class="os-detail-row"><span class="os-detail-label">Assinatura</span><span class="os-detail-value">${t.signature ? '<span style="color:var(--green);">\u2713 Assinado</span>' : '<span style="color:var(--text-dim);">— Sem assinatura</span>'}</span></div>
+      ${t.signature ? '<div style="margin-top:8px;padding:8px;background:var(--surface-2);border-radius:4px;text-align:center;"><img src="' + t.signature + '" style="max-width:200px;max-height:50px;display:block;margin:0 auto;"></div>' : ''}
     </div>
     <div style="margin-top:14px;padding:12px;background:var(--surface-2);border:1px solid var(--border-light);border-radius:4px;font-size:0.84rem;line-height:1.6;white-space:pre-wrap;max-height:200px;overflow-y:auto;">${App._esc(t.termText)}</div>
     ${t.notes ? '<div style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);">Obs: ' + App._esc(t.notes) + '</div>' : ''}
     <div class="overlay-actions" style="margin-top:16px;">
       <button class="btn" onclick="App._closeOverlay()">Fechar</button>
-      ${t.status === 'pending' ? '<button class="btn btn-success" onclick="App._signTermo(\'' + id + '\')">Marcar como assinado</button>' : ''}
+      ${t.status === 'pending' && !t.signature ? '<button class="btn btn-success" onclick="App._signTermoDigital(\'' + id + '\')">Assinar agora</button>' : ''}
+      ${t.status === 'pending' && t.signature ? '<button class="btn btn-success" onclick="App._signTermoConfirm(\'' + id + '\')">Confirmar assinatura</button>' : ''}
       <button class="btn btn-primary" onclick="App._printTermo('${id}')">Imprimir</button>
     </div>
     <div style="margin-top:16px;">${App._renderAnexosSection('termo', id, t.clientName)}</div>
   `);
 };
 
-App._signTermo = function(id) {
+App._signTermoDigital = function(id) {
+  var t = DB.getTermo(id);
+  if (!t) return;
+  App._openSignature('Assinar Termo de Consentimento', t.signature || null, function(dataUrl) {
+    DB.updateTermo(id, { signature: dataUrl, status: 'signed' });
+    if (t.clientId) Events.emit('crm.termo_assinado', { clientId: t.clientId, refId: id });
+    Audit.action('sign', 'termos', id, 'Termo de consentimento assinado digitalmente');
+    App._toast('Termo assinado com sucesso!', 'success');
+    App.refreshHoje();
+    if (App.currentModule === 'atendimento') {
+      App.renderAtendimento();
+    } else {
+      App._viewTermo(id);
+    }
+  });
+};
+
+App._signTermoConfirm = function(id) {
   App._confirm('Confirmar assinatura do termo?', function() {
     DB.updateTermo(id, { status: 'signed' });
     Audit.action('sign', 'termos', id, 'Termo de consentimento assinado');
@@ -157,12 +177,13 @@ App._saveTermoAndContinue = function(refId, type) {
   if (!procedure || !termText) return;
 
   let clientName = '', clientId = null;
+  let isActive = false;
   if (type === 'agenda' || type === 'agenda_complete') {
     const a = Repos.agenda.get(refId);
-    if (a) { clientName = a.clientName; clientId = a.clientId; }
+    if (a) { clientName = a.clientName; clientId = a.clientId; isActive = a.status === 'in_progress'; }
   } else if (type === 'walkin') {
     const q = Repos.atendimento.queue.list().find(x => x.id === refId);
-    if (q) clientName = q.clientName;
+    if (q) { clientName = q.clientName; isActive = q.status === 'in_progress'; }
   }
   if (!clientName) return;
 
@@ -171,5 +192,10 @@ App._saveTermoAndContinue = function(refId, type) {
   App._closeOverlay();
   App._toast('Termo de consentimento salvo!', 'success');
 
-  App._showOverlay('Gerar Ordem de Serviço', App._buildOSFormHtml({ id: refId, type, clientName, service: procedure, professional, value: '' }));
+  App.refreshHoje();
+  if (isActive && App.currentModule === 'atendimento') {
+    App.renderAtendimento();
+  } else {
+    App._showOverlay('Gerar Ordem de Serviço', App._buildOSFormHtml({ id: refId, type, clientName, service: procedure, professional, value: '' }));
+  }
 };

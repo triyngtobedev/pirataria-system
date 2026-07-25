@@ -6,12 +6,7 @@ const Auth = {
   },
 
   init() {
-    const users = DB.getUsers();
-    if (users.length === 0) {
-      DB.addUser({ name: 'Administrador', login: 'admin', password: this._hash('admin'), role: 'admin' });
-      DB.addUser({ name: 'Digão', login: 'digao', password: this._hash('digao'), role: 'piercer' });
-      DB.addUser({ name: 'Recepção', login: 'recepcao', password: this._hash('recepcao'), role: 'reception' });
-    }
+    // Users are created via setup wizard on first access, not auto-seeded
   },
 
   login(login, password) {

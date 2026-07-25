@@ -31,13 +31,14 @@ const Events = {
 // ─── Inicialização dos listeners do sistema ───
 Events._initListeners = function() {
 
-  // Atendimento concluído → registrar lançamento financeiro
+  // Atendimento concluído → registrar lançamento financeiro + CRM
   this.on('atendimento.finished', function(data) {
     if (!data.value || data.value <= 0) return;
     const desc = data.type === 'agenda'
       ? 'Atendimento: ' + (data.clientName || '')
       : 'Avulso: ' + (data.clientName || '');
-    Finance.autoRegister('entrada', 'atendimento', desc, data.value, '', data.id);
+    var entry = Finance.autoRegister('entrada', 'atendimento', desc, data.value, '', data.id);
+    if (entry && data.clientId) Events.emit('crm.pagamento', { clientId: data.clientId, value: data.value, refId: entry.id });
   });
 
   // Venda concluída → registrar lançamento financeiro
@@ -49,6 +50,33 @@ Events._initListeners = function() {
   // Backup restaurado → forçar recarga geral (via toast, a UI recarrega no callback)
   this.on('backup.restored', function() {
     App._toast('Backup restaurado. Recarregando dados...', 'info');
+  });
+
+  // ─── CRM: Automações do pipeline ───
+  this.on('crm.cliente_criado', function(data) {
+    if (data.clientId) CRM.autoUpdate(data.clientId, 'cliente_criado');
+  });
+  this.on('crm.atendimento_iniciado', function(data) {
+    if (data.clientId) CRM.autoUpdate(data.clientId, 'atendimento_iniciado');
+  });
+  this.on('crm.atendimento_concluido', function(data) {
+    if (data.clientId) CRM.autoUpdate(data.clientId, 'atendimento_concluido');
+    if (data.clientId) CRM.addTimeline(data.clientId, 'atendimento_concluido', 'Atendimento conclu\u00eddo', data.refId);
+  });
+  this.on('crm.agendamento_criado', function(data) {
+    if (data.clientId) CRM.autoUpdate(data.clientId, 'agendamento_criado');
+    if (data.clientId) CRM.addTimeline(data.clientId, 'agendamento', 'Agendamento criado para ' + (data.service || ''), data.refId);
+  });
+  this.on('crm.os_criada', function(data) {
+    if (data.clientId) CRM.autoUpdate(data.clientId, 'os_criada');
+    if (data.clientId) CRM.addTimeline(data.clientId, 'os_criada', 'Ordem de Servi\u00e7o gerada', data.refId);
+  });
+  this.on('crm.termo_assinado', function(data) {
+    if (data.clientId) CRM.addTimeline(data.clientId, 'termo_assinado', 'Termo de consentimento assinado', data.refId);
+  });
+  this.on('crm.pagamento', function(data) {
+    if (data.clientId) CRM.autoUpdate(data.clientId, 'pagamento');
+    if (data.clientId) CRM.addTimeline(data.clientId, 'pagamento', 'Pagamento registrado: R$ ' + (data.value || '0'), data.refId);
   });
 };
 

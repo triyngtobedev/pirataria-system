@@ -107,6 +107,7 @@ App._cancelPacote = function(id) {
   App._confirm('Cancelar este pacote?', function() {
     DB.updatePacote(id, { status: 'cancelado' });
     Audit.action('cancel', 'pacotes', id, 'Pacote cancelado');
+    App._toast('Pacote cancelado.', 'success');
     App.renderPacotes();
   });
 };
@@ -117,15 +118,25 @@ App._checkPacoteEUsar = function(clientId, service, refId, professional, callbac
   const pacotes = DB.getPacotesAtivosByClientAndService(clientId, service);
   if (pacotes.length === 0) { if (callback) callback(false); return; }
   const p = pacotes[0];
-  App._confirm(p.clientName + ' possui pacote "' + p.name + '" com ' + p.remainingQty + ' sessão(ões) restante(s). Deseja utilizar uma sessão?', function() {
-    const r = DB.usePacote(clientId, service, refId, professional);
+  App._showOverlay('Pacote dispon\u00edvel', '<p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">' + App._esc(p.clientName) + ' possui pacote <strong>' + App._esc(p.name) + '</strong> com ' + p.remainingQty + ' sess\u00e3o(\u00f5es) restante(s).</p><p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:16px;">Deseja utilizar uma sess\u00e3o?</p><div class="overlay-actions"><button class="btn" onclick="App._closeOverlay();App._checkPacoteCallback(false)">N\u00e3o</button><button class="btn btn-primary" onclick="App._closeOverlay();App._checkPacoteCallback(true)" style="margin-left:8px;">Sim, usar sess\u00e3o</button></div>');
+  App._checkPacoteData = { clientId: clientId, service: service, refId: refId, professional: professional, p: p, callback: callback };
+};
+
+App._checkPacoteCallback = function(useIt) {
+  var data = App._checkPacoteData;
+  if (!data) return;
+  if (useIt) {
+    var r = DB.usePacote(data.clientId, data.service, data.refId, data.professional);
     if (r.used) {
-      Audit.action('use', 'pacotes', r.pacote.id, 'Sessão utilizada em ' + service + ' — restam ' + r.pacote.remainingQty);
-      if (r.pacote.status === 'concluido') Audit.action('complete', 'pacotes', r.pacote.id, 'Pacote concluído');
-      App._toast('Sessão do pacote "' + r.pacote.name + '" utilizada! Restam ' + r.pacote.remainingQty, 'success');
+      Audit.action('use', 'pacotes', r.pacote.id, 'Sess\u00e3o utilizada em ' + data.service + ' \u2014 restam ' + r.pacote.remainingQty);
+      if (r.pacote.status === 'concluido') Audit.action('complete', 'pacotes', r.pacote.id, 'Pacote conclu\u00eddo');
+      App._toast('Sess\u00e3o do pacote "' + r.pacote.name + '" utilizada! Restam ' + r.pacote.remainingQty, 'success');
     }
-    if (callback) callback(r.used);
-  });
+    if (data.callback) data.callback(true);
+  } else {
+    if (data.callback) data.callback(false);
+  }
+  App._checkPacoteData = null;
 };
 
 // ─── Seção no perfil do cliente ───

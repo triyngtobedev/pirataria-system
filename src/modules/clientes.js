@@ -4,7 +4,7 @@ App.renderClientes = function() {
 
   let rows = '';
   if (clients.length === 0) {
-    rows = C.emptyState('Nenhum cliente encontrado.');
+    rows = C.emptyStateFull({icon:'person', title:'Nenhum cliente encontrado', desc:'Cadastre o primeiro cliente para começar.', btnLabel:'+ Novo cliente', btnAction:"App.showAddClient()"});
   } else {
     rows = `<div class="table-wrap"><table id="clientTable">
       <thead><tr><th>Nome</th><th>Telefone</th><th>Instagram</th><th>Interesse</th><th>Visitas</th><th>Última visita</th></tr></thead>
@@ -66,21 +66,25 @@ App.showAddClient = function() {
 };
 
 App.addClient = function() {
+  if (App._locks['addClient']) return;
   if (!Validation.form([
     { id: 'clientName', rules: ['required'], label: 'Nome' },
     { id: 'clientPhone', rules: ['phone'], label: 'Telefone' },
     { id: 'clientInstagram', rules: ['instagram'], label: 'Instagram' },
   ])) return;
-  Repos.clientes.create({
+  App._locks['addClient'] = true;
+  var c = Repos.clientes.create({
     name: document.getElementById('clientName').value.trim(),
     phone: document.getElementById('clientPhone').value.trim(),
     instagram: document.getElementById('clientInstagram').value.trim(),
     interest: document.getElementById('clientInterest').value,
     notes: document.getElementById('clientNotes').value.trim()
   });
+  App._locks['addClient'] = false;
   this._closeOverlay();
   Audit.action('create', 'clientes', '', 'Cliente cadastrado: ' + document.getElementById('clientName').value.trim());
   App._toast('Cliente cadastrado.', 'success');
+  Events.emit('crm.cliente_criado', { clientId: c.id });
   this.renderClientes();
 };
 
@@ -118,7 +122,7 @@ App.openClientPanel = function(id) {
   // ─── Histórico ───
   let historyHtml = '';
   if (history.length === 0) {
-    historyHtml = C.emptyState('Nenhum atendimento registrado.');
+    historyHtml = C.emptyStateFull({icon:'clock', title:'Nenhum atendimento registrado', desc:'Os atendimentos realizados aparecerão aqui.'});
   } else {
     historyHtml = history.map(h => {
       return `<div class="history-item">
@@ -141,7 +145,7 @@ App.openClientPanel = function(id) {
   // ─── Linha do Tempo ───
   let timelineHtml = '';
   if (timeline.length === 0) {
-    timelineHtml = C.emptyState('Nenhum evento registrado.');
+    timelineHtml = C.emptyStateFull({icon:'clock', title:'Nenhum evento registrado', desc:'O histórico de interações com o cliente aparecerá aqui.'});
   } else {
     timelineHtml = '<div class="cp-timeline">';
     timeline.forEach(e => {
@@ -183,6 +187,45 @@ App.openClientPanel = function(id) {
     <div class="panel-divider"></div>
 
     <div class="panel-section">
+      <div class="panel-section-title">CRM — Pipeline Comercial</div>
+      <div class="form-group"><label>Status</label>
+        <select id="panelCrmStatus">
+          ${function(){ var s = c.crmStatus || 'novo_contato'; return Object.keys(CRM.STATUS_LABELS).map(function(k){ return '<option value="' + k + '"' + (s === k ? ' selected' : '') + '>' + CRM.STATUS_LABELS[k] + '</option>'; }).join(''); }()}
+        </select>
+      </div>
+      <div class="form-group"><label>Pr\u00f3xima a\u00e7\u00e3o</label>
+        <input type="text" id="panelCrmAction" value="${this._esc(c.crmNextAction || '')}" placeholder="Ex: Cobrar retorno">
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Data</label>
+          <input type="date" id="panelCrmDate" value="${c.crmNextDate || ''}">
+        </div>
+        <div class="form-group"><label>Prioridade</label>
+          <select id="panelCrmPriority">
+            <option value="high" ${(c.crmPriority||'medium') === 'high' ? 'selected' : ''}>Alta</option>
+            <option value="medium" ${(c.crmPriority||'medium') === 'medium' ? 'selected' : ''}>M\u00e9dia</option>
+            <option value="low" ${(c.crmPriority||'medium') === 'low' ? 'selected' : ''}>Baixa</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Observa\u00e7\u00e3o</label>
+        <input type="text" id="panelCrmNote" value="${this._esc(c.crmNote || '')}" placeholder="Ex: Escolhendo joia">
+      </div>
+      <div class="flex gap-8 mt-12">
+        <button class="btn btn-primary btn-sm" onclick="App.saveCRMFromPanel()">Salvar CRM</button>
+        <button class="btn btn-sm" onclick="App.clearCRMNextAction()">Limpar a\u00e7\u00e3o</button>
+      </div>
+      <div class="flex gap-8 mt-12" style="flex-wrap:wrap;">
+        <button class="btn btn-sm" onclick="App.navigate('agenda')" style="color:var(--gold);">Agendar retorno</button>
+        <button class="btn btn-sm" onclick="App.navigate('agenda')">Abrir agenda</button>
+        <button class="btn btn-sm" onclick="App.navigate('atendimento')">Abrir atendimento</button>
+        <button class="btn btn-sm" onclick="App.navigate('financeiro')">Ver financeiro</button>
+      </div>
+    </div>
+
+    <div class="panel-divider"></div>
+
+    <div class="panel-section">
       <div class="panel-section-title">Linha do Tempo</div>
       ${timelineHtml}
     </div>
@@ -196,19 +239,28 @@ App.openClientPanel = function(id) {
       </div>
       ${historyHtml}
     </div>
+    ${App._renderPlanosSection(id, c)}
     ${App._renderAnexosSection('cliente', id, c.name)}
     ${App._renderValesSection(id, c.name)}
     ${App._renderPacotesSection(id, c.name)}`;
 
   document.getElementById('panelOverlay').classList.add('show');
+  setTimeout(function() {
+    document.querySelectorAll('#panelBody input, #panelBody select, #panelBody textarea').forEach(function(el) {
+      el.addEventListener('input', function() { App._markDirty(); });
+      el.addEventListener('change', function() { App._markDirty(); });
+    });
+  }, 10);
 };
 
 App.closeClientPanel = function() {
   document.getElementById('panelOverlay').classList.remove('show');
   this._panelClientId = null;
+  App._markClean();
 };
 
 App.saveClientFromPanel = function() {
+  if (App._locks['saveClient']) return;
   const id = this._panelClientId;
   if (!id) return;
   if (!Validation.form([
@@ -216,6 +268,7 @@ App.saveClientFromPanel = function() {
     { id: 'panelPhone', rules: ['phone'], label: 'Telefone' },
     { id: 'panelInstagram', rules: ['instagram'], label: 'Instagram' },
   ])) return;
+  App._locks['saveClient'] = true;
   Repos.clientes.update(id, {
     name: document.getElementById('panelName').value.trim(),
     phone: document.getElementById('panelPhone').value.trim(),
@@ -223,6 +276,7 @@ App.saveClientFromPanel = function() {
     interest: document.getElementById('panelInterest').value,
     notes: document.getElementById('panelNotes').value.trim()
   });
+  App._locks['saveClient'] = false;
   Audit.action('update', 'clientes', id, 'Dados do cliente atualizados');
   App._toast('Cliente atualizado.', 'success');
   this.openClientPanel(id);
@@ -289,6 +343,74 @@ App.deleteServiceHistory = function(clientId, entryId) {
     App.openClientPanel(clientId);
     App.renderClientes();
   });
+};
+
+App.saveCRMFromPanel = function() {
+  const id = this._panelClientId;
+  if (!id) return;
+  var status = document.getElementById('panelCrmStatus').value;
+  var action = document.getElementById('panelCrmAction').value.trim();
+  var date = document.getElementById('panelCrmDate').value;
+  var priority = document.getElementById('panelCrmPriority').value;
+  var note = document.getElementById('panelCrmNote').value.trim();
+  CRM.setStatus(id, status);
+  CRM.setNextAction(id, action, date, priority, note);
+  App._toast('CRM atualizado.', 'success');
+  this.openClientPanel(id);
+  this.renderClientes();
+  App.refreshHoje();
+};
+
+App.clearCRMNextAction = function() {
+  const id = this._panelClientId;
+  if (!id) return;
+  CRM.clearNextAction(id);
+  App._toast('Pr\u00f3xima a\u00e7\u00e3o limpa.', 'success');
+  this.openClientPanel(id);
+  this.renderClientes();
+  App.refreshHoje();
+};
+
+App._renderPlanosSection = function(id, c) {
+  var planos = DB.getPlanosByClient(id);
+  if (planos.length === 0) return '';
+
+  var html = '<div class="panel-divider"></div><div class="panel-section"><div class="panel-section-title">Acompanhamentos</div>';
+  for (var i = 0; i < planos.length; i++) {
+    var p = planos[i];
+    var etapas = DB.getEtapas(p.id);
+    var concluidas = etapas.filter(function(e) { return e.status === 'concluida'; }).length;
+    var total = etapas.length;
+    var pct = total > 0 ? Math.round(concluidas / total * 100) : 0;
+    var statusCls = p.status === 'ativo' ? 'badge-progress' : p.status === 'concluido' ? 'badge-completed' : 'badge-cancelled';
+    var statusLabel = p.status === 'ativo' ? 'Ativo' : p.status === 'concluido' ? 'Conclu\u00eddo' : 'Cancelado';
+
+    html += '<div style="background:var(--surface-2);border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;">' +
+      '<div class="flex-between" style="margin-bottom:4px;"><span><strong>' + App._esc(p.procedimento) + '</strong></span><span class="badge ' + statusCls + '">' + statusLabel + '</span></div>' +
+      '<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:6px;">' + (p.profissional ? App._esc(p.profissional) + ' \u2022 ' : '') + p.dataProcedimento + ' \u2022 ' + concluidas + '/' + total + ' etapas</div>';
+
+    if (total > 0) {
+      html += '<div style="height:4px;background:var(--border);border-radius:2px;margin-bottom:8px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:' + (pct === 100 ? 'var(--green)' : 'var(--gold)') + ';border-radius:2px;transition:width 0.3s;"></div></div>';
+    }
+
+    etapas.forEach(function(e) {
+      var eStatusCls = e.status === 'concluida' ? 'badge-completed' : e.status === 'ignorada' ? 'badge-cancelled' : 'badge-scheduled';
+      var eStatusLabel = e.status === 'concluida' ? '\u2713' : e.status === 'ignorada' ? '\u2717' : '\u25CB';
+      var eBtn = '';
+      if (e.status === 'pendente') {
+        eBtn = '<button class="btn btn-sm" style="font-size:0.65rem;padding:2px 6px;" onclick="PosAtendimento.concluirEtapa(\'' + e.id + '\',\'\');App.openClientPanel(\'' + id + '\');App.refreshHoje();">Concluir</button>';
+      }
+      var atrasada = e.status === 'pendente' && e.dataPrevista && e.dataPrevista < DB._today() ? ' style="color:var(--accent-hover);"' : '';
+      html += '<div class="flex-between" style="padding:4px 0;font-size:0.78rem;border-bottom:1px solid var(--border-light);"' + atrasada + '>' +
+        '<span><span class="badge ' + eStatusCls + '" style="font-size:0.6rem;padding:1px 5px;margin-right:6px;">' + eStatusLabel + '</span>' + e.label + (e.dataPrevista ? ' (' + e.dataPrevista + ')' : '') + '</span>' +
+        '<span>' + eBtn + '</span>' +
+      '</div>';
+    });
+
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
 };
 
 App._autoSaveNotes = function() {

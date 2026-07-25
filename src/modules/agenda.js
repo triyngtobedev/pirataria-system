@@ -35,7 +35,7 @@ App._dayName = function(date) {
 App.renderAgenda = function() {
   const container = document.getElementById('moduleContent');
   container.innerHTML = `
-    ${App._renderLembretePanel()}
+    ${App._renderDashboard()}
     <div class="cal-toolbar">
       <div class="cal-nav">
         <button class="btn btn-sm" onclick="App._weekNav(-1)">&lt;</button>
@@ -172,7 +172,7 @@ App._renderDayView = function() {
 
   let listHtml = '';
   if (apps.length === 0) {
-    listHtml = C.emptyState('Nenhum agendamento para este dia.');
+    listHtml = C.emptyStateFull({icon:'calendar', title:'Nenhum agendamento', desc:'Nenhum agendamento para este dia.'});
   } else {
     listHtml = '<div class="dv-list">';
     apps.forEach(a => {
@@ -275,6 +275,7 @@ App.addAppointment = function() {
     const name = document.getElementById('agendaNewName').value.trim();
     if (!name) { Validation._showError('agendaNewName', 'Nome é obrigatório.'); return; }
     const c = Repos.clientes.create({ name, phone: document.getElementById('agendaNewPhone').value.trim(), interest: document.getElementById('agendaService').value });
+    Events.emit('crm.cliente_criado', { clientId: c.id });
     Repos.agenda.create({
       clientId: c.id, clientName: c.name,
       date: document.getElementById('agendaDate').value,
@@ -284,7 +285,7 @@ App.addAppointment = function() {
       professional: document.getElementById('agendaProfessional').value,
       notes: document.getElementById('agendaNotes').value.trim()
     });
-  } else {
+    Events.emit('crm.agendamento_criado', { clientId: c.id, service: document.getElementById('agendaService').value, refId: null });
     const c = Repos.clientes.get(sel.value);
     if (!c) return;
     Repos.agenda.create({
@@ -296,11 +297,13 @@ App.addAppointment = function() {
       professional: document.getElementById('agendaProfessional').value,
       notes: document.getElementById('agendaNotes').value.trim()
     });
+    Events.emit('crm.agendamento_criado', { clientId: c.id, service: document.getElementById('agendaService').value, refId: null });
   }
   this._closeOverlay();
   Audit.action('create', 'agenda', '', 'Agendamento criado para ' + (Repos.agenda.list().slice(-1)[0] || {}).clientName);
   App._toast('Agendamento criado com sucesso.', 'success');
   this.renderAgenda();
+  App.refreshHoje();
 };
 
 App.editAppointment = function(id) {
@@ -354,6 +357,7 @@ App.updateAppointment = function(id) {
   Audit.action('update', 'agenda', id, 'Agendamento atualizado');
   App._toast('Agendamento atualizado.', 'success');
   this.renderAgenda();
+  App.refreshHoje();
 };
 
 App.confirmAppointment = function(id) {
@@ -361,6 +365,7 @@ App.confirmAppointment = function(id) {
   Audit.action('update', 'agenda', id, 'Agendamento confirmado');
   App._toast('Agendamento confirmado.', 'success');
   this.renderAgenda();
+  App.refreshHoje();
 };
 
 App.completeAppointment = function(id) {
@@ -412,12 +417,20 @@ App.doComplete = function(id) {
       });
     }
   }
+  var compValue = document.getElementById('completeValue').value.trim();
+  var compValNum = parseFloat(compValue.replace(',', '.')) || 0;
+  var compNotes = document.getElementById('completeNotes').value.trim();
+  App._gerarComissao(a.professional, 'servico', id, 'Atendimento: ' + a.clientName, compValNum);
   this._closeOverlay();
   Audit.action('complete', 'agenda', id, 'Atendimento concluído via Agenda');
   App._toast('Atendimento concluído.', 'success');
-  const a2 = Repos.agenda.get(id);
-  if (a2) App._promptGerarOS({ id, type: 'agenda_complete', clientName: a2.clientName, service: a2.service, professional: a2.professional, value: document.getElementById('completeValue').value.trim(), notes: document.getElementById('completeNotes').value.trim() });
-  this.renderAgenda();
+  var self = this;
+  App._checkPacoteEUsar(a.clientId, a.service, id, a.professional, function() {
+    if (a) App._promptGerarOS({ id: id, type: 'agenda_complete', clientName: a.clientName, service: a.service, professional: a.professional, value: compValue, notes: compNotes });
+    self.renderAgenda();
+    App.refreshHoje();
+  });
+  if (!a) { this.renderAgenda(); return; }
 };
 
 App.deleteAppointment = function(id) {
@@ -426,5 +439,172 @@ App.deleteAppointment = function(id) {
     Audit.action('delete', 'agenda', id, 'Agendamento removido');
     App._toast('Agendamento removido.', 'success');
     App.renderAgenda();
+    App.refreshHoje();
   });
+};
+
+// ─── Dashboard ───
+App._renderDashboard = function() {
+  const today = DB._today();
+  const now = new Date();
+  const todayStr = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^\w/, function(c) { return c.toUpperCase(); });
+
+  const agendaToday = DB.getAppointmentsByDate(today);
+  const doneToday = agendaToday.filter(function(a) { return a.status === 'completed'; }).length;
+  var revToday = 0;
+  agendaToday.forEach(function(a) { if (a.status === 'completed') revToday += parseFloat(a.value) || 0; });
+  var walkinRev = 0;
+  DB.getQueue().forEach(function(q) { if (q.status === 'done') walkinRev += parseFloat(q.value) || 0; });
+  var totalRev = revToday + walkinRev;
+
+  var cashier = DB.getOpenCashier();
+  var lowStockCount = 0;
+  try { var inv = Inventory.alerts(); lowStockCount = (inv.outOfStock || []).length + (inv.belowMin || []).length; } catch(e) {}
+
+  var upcoming = agendaToday.filter(function(a) { return a.status === 'pending' || a.status === 'confirmed'; }).sort(function(a, b) { return a.time > b.time ? 1 : -1; }).slice(0, 3);
+
+  var recentLogs = [];
+  try { recentLogs = DB.getLogs(5); } catch(e) {}
+
+  var pendingLems = DB.getLembretes().filter(function(l) { return l.status === 'pending'; });
+  var lateLems = pendingLems.filter(function(l) { return l.date < today; });
+  var todayLems = pendingLems.filter(function(l) { return l.date === today; });
+
+  var html = '<div class="db-wrap">';
+  html += App._renderOnboardingChecklist();
+  html += App._renderPendingPanel();
+  html += '<div class="db-header"><span class="db-date">' + App._esc(todayStr) + '</span><div class="db-chips">';
+  if (cashier) html += '<span class="db-chip db-chip-green">Caixa aberto</span>';
+  if (lateLems.length > 0) html += '<span class="db-chip db-chip-red">' + lateLems.length + ' lembrete(s) atrasado(s)</span>';
+  if (todayLems.length > 0) html += '<span class="db-chip db-chip-yellow">' + todayLems.length + ' lembrete(s) hoje</span>';
+  if (lowStockCount > 0) html += '<span class="db-chip db-chip-red">' + lowStockCount + ' produto(s) estoque crítico</span>';
+  html += '</div></div>';
+
+  html += '<div class="db-metrics">';
+  html += '<div class="db-card db-card-gold"><div class="db-card-icon">&#9733;</div><div class="db-card-body"><span class="db-card-value" data-count="' + totalRev.toFixed(2) + '" data-prefix="R$ ">0,00</span><span class="db-card-label">Faturamento hoje</span></div></div>';
+  html += '<div class="db-card db-card-blue"><div class="db-card-icon">&#9745;</div><div class="db-card-body"><span class="db-card-value" data-count="' + doneToday + '">0</span><span class="db-card-label">Atendimentos hoje</span></div></div>';
+  html += '<div class="db-card db-card-purple"><div class="db-card-icon">&#9787;</div><div class="db-card-body"><span class="db-card-value" data-count="' + agendaToday.length + '">0</span><span class="db-card-label">Agendamentos hoje</span></div></div>';
+  html += '<div class="db-card db-card-teal"><div class="db-card-icon">&#9881;</div><div class="db-card-body"><span class="db-card-value" data-count="' + DB.getQueue().length + '">0</span><span class="db-card-label">Na fila</span></div></div>';
+  html += '</div>';
+
+  html += '<div class="db-bottom">';
+  html += '<div class="db-col"><div class="db-section-title">Próximos atendimentos</div>';
+  if (upcoming.length === 0) html += '<div class="db-empty">Nenhum agendamento pendente.</div>';
+  else {
+    upcoming.forEach(function(a) {
+      html += '<div class="db-event"><span class="db-event-time">' + a.time + '</span><div class="db-event-body"><span class="db-event-title">' + App._esc(a.clientName) + '</span><span class="db-event-sub">' + App._esc(a.service) + (a.professional ? ' — ' + Repos.studio.professionals.label(a.professional) : '') + '</span></div></div>';
+    });
+  }
+  html += '</div>';
+
+  html += '<div class="db-col"><div class="db-section-title">Atividade recente</div>';
+  if (recentLogs.length === 0) html += '<div class="db-empty">Nenhuma atividade registrada.</div>';
+  else {
+    recentLogs.forEach(function(l) {
+      html += '<div class="db-activity"><span class="db-activity-time">' + (l.createdAt ? l.createdAt.slice(11, 19) : '—') + '</span><span class="db-activity-text">' + App._esc(l.description || l.action) + '</span></div>';
+    });
+  }
+  html += '</div></div></div>';
+
+  setTimeout(function() {
+    document.querySelectorAll('.db-card-value').forEach(function(el) {
+      var target = parseFloat(el.dataset.count.replace(',', '.')) || 0;
+      var prefix = el.dataset.prefix || '';
+      var duration = 800;
+      var start = performance.now();
+      function frame(now) {
+        var pct = Math.min(1, (now - start) / duration);
+        var current = target * (1 - Math.pow(1 - pct, 3));
+        el.textContent = prefix + (target % 1 === 0 ? Math.round(current) : current.toFixed(2).replace('.', ','));
+        if (pct < 1) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    });
+  }, 100);
+
+  return html;
+};
+
+// ─── Onboarding Checklist ───
+App._onboardingDone = false;
+
+App._renderOnboardingChecklist = function() {
+  if (this._onboardingDone) return '';
+
+  var checks = [
+    { label: 'Cadastrar o primeiro cliente', done: Repos.clientes.list().length > 0, icon: 'person' },
+    { label: 'Agendar o primeiro atendimento', done: Repos.agenda.list().length > 0, icon: 'calendar' },
+    { label: 'Registrar o primeiro atendimento', done: Repos.agenda.list().filter(function(a) { return a.status === 'completed'; }).length > 0, icon: 'clock' },
+    { label: 'Criar a primeira Ordem de Servi\u00e7o', done: DB.getOrdensServico().length > 0, icon: 'document' },
+    { label: 'Registrar a primeira venda', done: Repos.produtos.sales.list().length > 0, icon: 'cart' },
+    { label: 'Adicionar o primeiro item ao estoque', done: Repos.produtos.list().length > 0, icon: 'box' },
+  ];
+
+  var allDone = checks.every(function(c) { return c.done; });
+  if (allDone) {
+    this._onboardingDone = true;
+    return '<div class="ob-wrap ob-complete"><div class="ob-title">Parab\u00e9ns!</div><div class="ob-desc">O Pirataria System est\u00e1 pronto para o uso di\u00e1rio.</div></div>';
+  }
+
+  var html = '<div class="ob-wrap">';
+  html += '<div class="ob-title">Comece por aqui</div>';
+  html += '<div class="ob-desc">Complete os passos abaixo para configurar o sistema e come\u00e7ar a atender.</div>';
+  html += '<div class="ob-list">';
+  checks.forEach(function(c) {
+    var cls = c.done ? 'ob-item ob-item-done' : 'ob-item';
+    var icon = c.done ? '\u2713' : '\u25CB';
+    html += '<div class="' + cls + '"><span class="ob-icon">' + icon + '</span><span class="ob-label">' + App._esc(c.label) + '</span></div>';
+  });
+  html += '</div></div>';
+  return html;
+};
+
+// ─── Pendências de Hoje ───
+App._renderPendingPanel = function() {
+  var today = DB._today();
+  var nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+  var items = [];
+
+  function parseTime(t) { var p = t.split(':'); return parseInt(p[0]) * 60 + parseInt(p[1]); }
+
+  Repos.agenda.byDate(today).filter(function(a) { return a.status === 'in_progress'; }).forEach(function(a) {
+    items.push({ type: 'atendimento', client: a.clientName, desc: 'Atendimento iniciado e n\u00e3o finalizado', sev: 'high', action: 'App.navigate(\'atendimento\')' });
+  });
+  Repos.atendimento.queue.list().filter(function(q) { return q.status === 'in_progress'; }).forEach(function(q) {
+    items.push({ type: 'atendimento', client: q.clientName, desc: 'Atendimento iniciado e n\u00e3o finalizado', sev: 'high', action: 'App.navigate(\'atendimento\')' });
+  });
+
+  Repos.agenda.byDate(today).filter(function(a) { return (a.status === 'pending' || a.status === 'confirmed') && parseTime(a.time) < nowMin; }).forEach(function(a) {
+    items.push({ type: 'agenda', client: a.clientName, desc: 'Agendamento passou do hor\u00e1rio (' + a.time + ')', sev: 'medium', action: 'App.navigate(\'agenda\')' });
+  });
+
+  var ledger = Repos.financeiro.ledger.list(today);
+  DB.getOrdensServico().filter(function(o) { return o.date === today && o.status !== 'cancelled'; }).forEach(function(o) {
+    var paid = ledger.some(function(l) { return l.description && l.description.indexOf(o.clientName) >= 0; });
+    if (!paid) items.push({ type: 'os', client: o.clientName, desc: 'OS #' + o.osNumber + ' sem pagamento', sev: 'medium', action: 'App.navigate(\'os\')' });
+  });
+
+  Repos.agenda.byDate(today).filter(function(a) { return a.status === 'in_progress' || a.status === 'completed'; }).forEach(function(a) {
+    var temTermo = DB.getTermos().some(function(t) { return t.clientName === a.clientName && t.procedure === a.service && t.status === 'signed'; });
+    if (!temTermo) items.push({ type: 'termo', client: a.clientName, desc: 'Termo de consentimento pendente', sev: 'medium', action: 'App.navigate(\'termos\')' });
+  });
+
+  items.sort(function(a, b) { return a.sev === 'high' ? -1 : b.sev === 'high' ? 1 : 0; });
+  if (items.length === 0) return '';
+
+  var icons = { high: '\u26D4', medium: '\u26A0' };
+  var cols  = { high: 'pp-red', medium: 'pp-yellow' };
+
+  var html = '<div class="pp-wrap">';
+  html += '<div class="pp-title">Pend\u00eancias de Hoje (' + items.length + ')</div>';
+  html += '<div class="pp-list">';
+  items.slice(0, 8).forEach(function(item) {
+    html += '<div class="pp-item ' + (cols[item.sev] || '') + '" onclick="' + item.action + '">';
+    html += '<span class="pp-icon">' + (icons[item.sev] || '\u2022') + '</span>';
+    html += '<span class="pp-body"><span class="pp-client">' + App._esc(item.client) + '</span><span class="pp-desc">' + item.desc + '</span></span>';
+    html += '</div>';
+  });
+  if (items.length > 8) html += '<div class="pp-more">+ ' + (items.length - 8) + ' pend\u00eancias...</div>';
+  html += '</div></div>';
+  return html;
 };

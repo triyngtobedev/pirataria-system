@@ -9,7 +9,9 @@ const App = {
   init() {
     Migrations.run();
     Auth.init();
-    if (Auth.isAuthenticated()) {
+    if (DB.getUsers().length === 0) {
+      this._showSetup();
+    } else if (Auth.isAuthenticated()) {
       this._boot();
     } else {
       this._showLogin();
@@ -17,12 +19,21 @@ const App = {
   },
 
   _boot() {
+    Palette.init();
     DB.seed();
     document.getElementById('loginOverlay').classList.remove('show');
     document.getElementById('appShell').classList.add('show');
     this._applyPermissions();
     this.bindNav();
+    if (typeof Notificacao !== 'undefined') Notificacao._updateBadge();
     this.navigate(this._getDefaultModule());
+    var self = this;
+    if (this._isFirstAccess) {
+      setTimeout(function() {
+        self._promptSeedData();
+      }, 600);
+    }
+    this._isFirstAccess = false;
   },
 
   _applyPermissions() {
@@ -38,8 +49,32 @@ const App = {
   },
 
   _getDefaultModule() {
+    if (Permissions.canAccess('hoje')) return 'hoje';
     const modules = Permissions.allowedModules();
     return modules.length > 0 ? modules[0] : null;
+  },
+
+  _showSetup() {
+    document.getElementById('setupOverlay').classList.add('show');
+  },
+
+  _doSetup() {
+    var name = document.getElementById('setupName').value.trim();
+    var login = document.getElementById('setupUser').value.trim();
+    var pass = document.getElementById('setupPass').value;
+    var pass2 = document.getElementById('setupPass2').value;
+    var errorEl = document.getElementById('setupError');
+    errorEl.style.display = 'none';
+    if (!name || !login || !pass) { errorEl.textContent = 'Preencha todos os campos.'; errorEl.style.display = 'block'; return; }
+    if (login.length < 3) { errorEl.textContent = 'Usu\u00e1rio deve ter pelo menos 3 caracteres.'; errorEl.style.display = 'block'; return; }
+    if (pass.length < 4) { errorEl.textContent = 'Senha deve ter pelo menos 4 caracteres.'; errorEl.style.display = 'block'; return; }
+    if (pass !== pass2) { errorEl.textContent = 'Senhas n\u00e3o conferem.'; errorEl.style.display = 'block'; return; }
+    DB.addUser({ name: name, login: login, password: Auth._hash(pass), role: 'admin' });
+    document.getElementById('setupOverlay').classList.remove('show');
+    document.getElementById('loginUser').value = login;
+    document.getElementById('loginPass').value = pass;
+    this._isFirstAccess = true;
+    this._doLogin();
   },
 
   _showLogin() {
@@ -66,6 +101,63 @@ const App = {
     document.getElementById('loginPass').value = '';
     document.getElementById('loginError').style.display = 'none';
     this._showLogin();
+  },
+
+  _promptSeedData() {
+    var self = this;
+    this._showOverlay('Configura\u00e7\u00e3o inicial', '<p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:18px;line-height:1.5;">Deseja iniciar o sistema com dados b\u00e1sicos para facilitar o uso?<br><br>Ser\u00e3o criados:<br>\u2022 Categorias de estoque (Agulhas, Tintas, EPIs, Higiene, Descart\u00e1veis)<br>\u2022 Formas de pagamento (Dinheiro, PIX, D\u00e9bito, Cr\u00e9dito, Transfer\u00eancia)<br>\u2022 Servi\u00e7os padr\u00e3o (Tatuagem, Piercing, Retoque, Avalia\u00e7\u00e3o)</p><div class="overlay-actions"><button class="btn" onclick="App._closeOverlay();App._promptStudioSetup()">N\u00e3o agora</button><button class="btn btn-primary" onclick="App._closeOverlay();App._applySeedData();setTimeout(function(){App._promptStudioSetup()},100)">Sim, criar dados b\u00e1sicos</button></div>');
+  },
+
+  _applySeedData() {
+    var criados = [];
+
+    // Categorias de estoque (se vazio)
+    if (Repos.produtos.categories.list().length === 0) {
+      ['Agulhas', 'Tintas', 'EPIs', 'Higiene', 'Materiais descart\u00e1veis'].forEach(function(n) { Repos.produtos.categories.create({ name: n }); });
+      criados.push('categorias');
+    }
+
+    // Formas de pagamento (se vazio)
+    if (Repos.financeiro.paymentMethods.list().length === 0) {
+      ['Dinheiro', 'PIX', 'D\u00e9bito', 'Cr\u00e9dito', 'Transfer\u00eancia'].forEach(function(n) { Repos.financeiro.paymentMethods.create({ name: n }); });
+      criados.push('formas de pagamento');
+    }
+
+    // Servi\u00e7os padr\u00e3o
+    if (Repos.studio.services.list().length === 0 || Repos.studio.services.list().length <= 3) {
+      var existing = Repos.studio.services.list().map(function(s) { return s.name; });
+      ['Tatuagem', 'Piercing', 'Retoque', 'Avalia\u00e7\u00e3o'].forEach(function(n) {
+        if (existing.indexOf(n) === -1) Repos.studio.services.create({ name: n });
+      });
+      criados.push('servi\u00e7os');
+    }
+
+    if (criados.length > 0) {
+      App._toast('Dados b\u00e1sicos criados: ' + criados.join(', ') + '.', 'success');
+    }
+  },
+
+  _promptStudioSetup() {
+    var s = Repos.studio.settings.get();
+    this._showOverlay('Configurar est\u00fadio', '<p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:16px;">Informe os dados do est\u00fadio. Voc\u00ea pode preencher apenas o essencial e completar depois pelo m\u00f3dulo Studio.</p><div class="form-group"><label>Nome do est\u00fadio *</label><input type="text" id="cfgName" value="' + App._esc(s.studioName) + '"></div><div class="form-row"><div class="form-group"><label>Nome fantasia</label><input type="text" id="cfgFantasia" value="' + App._esc(s.fantasia || '') + '"></div><div class="form-group"><label>CNPJ</label><input type="text" id="cfgCnpj" value="' + App._esc(s.cnpj || '') + '"></div></div><div class="form-group"><label>Endere\u00e7o</label><input type="text" id="cfgAddress" value="' + App._esc(s.address || '') + '"></div><div class="form-row"><div class="form-group"><label>Cidade / UF</label><input type="text" id="cfgCity" value="' + App._esc(s.city || '') + '"></div><div class="form-group"><label>Telefone</label><input type="text" id="cfgPhone" value="' + App._esc(s.phone || '') + '"></div></div><div class="form-row"><div class="form-group"><label>WhatsApp</label><input type="text" id="cfgWhatsapp" value="' + App._esc(s.whatsapp || '') + '"></div><div class="form-group"><label>Instagram</label><input type="text" id="cfgInsta" value="' + App._esc(s.instagram || '') + '"></div></div><div class="form-row"><div class="form-group"><label>E-mail</label><input type="text" id="cfgEmail" value="' + App._esc(s.email || '') + '"></div><div class="form-group"><label>Hor\u00e1rio de funcionamento</label><input type="text" id="cfgHours" value="' + App._esc(s.businessHours || '') + '" placeholder="Ex: Seg-Sex 10h-19h, S\u00e1b 10h-17h"></div></div><div class="overlay-actions"><button class="btn" onclick="App._closeOverlay()">Pular</button><button class="btn btn-primary" onclick="App._saveStudioSetup()">Salvar</button></div>');
+  },
+
+  _saveStudioSetup() {
+    var data = {
+      studioName: document.getElementById('cfgName').value.trim() || 'Pirataria Body Art',
+      fantasia: document.getElementById('cfgFantasia').value.trim(),
+      cnpj: document.getElementById('cfgCnpj').value.trim(),
+      address: document.getElementById('cfgAddress').value.trim(),
+      city: document.getElementById('cfgCity').value.trim(),
+      phone: document.getElementById('cfgPhone').value.trim(),
+      whatsapp: document.getElementById('cfgWhatsapp').value.trim(),
+      instagram: document.getElementById('cfgInsta').value.trim(),
+      email: document.getElementById('cfgEmail').value.trim(),
+      businessHours: document.getElementById('cfgHours').value.trim()
+    };
+    Repos.studio.settings.save(data);
+    this._closeOverlay();
+    App._toast('Est\u00fadio configurado com sucesso!', 'success');
   },
 
   bindNav() {

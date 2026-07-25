@@ -95,6 +95,7 @@ App._cancelVale = function(id) {
   App._confirm('Cancelar este vale?', function() {
     DB.updateVale(id, { status: 'cancelado' });
     Audit.action('cancel', 'vales', id, 'Vale cancelado');
+    App._toast('Vale cancelado.', 'success');
     App.renderVales();
   });
 };

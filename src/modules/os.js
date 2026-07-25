@@ -65,9 +65,12 @@ App._viewOS = function(id) {
       ${o.notes ? '<div class="os-detail-row"><span class="os-detail-label">Observações</span><span class="os-detail-value">' + App._esc(o.notes) + '</span></div>' : ''}
       ${o.createdAt ? '<div class="os-detail-row"><span class="os-detail-label">Criada em</span><span class="os-detail-value">' + o.createdAt.slice(0, 19).replace('T', ' ') + '</span></div>' : ''}
       ${o.completedAt ? '<div class="os-detail-row"><span class="os-detail-label">Concluída em</span><span class="os-detail-value">' + o.completedAt.slice(0, 19).replace('T', ' ') + '</span></div>' : ''}
+      <div class="os-detail-row"><span class="os-detail-label">Assinatura</span><span class="os-detail-value">${o.signature ? '<span style="color:var(--green);">\u2713 Assinado</span>' : '<span style="color:var(--text-dim);">— Sem assinatura</span>'}</span></div>
+      ${o.signature ? '<div style="margin-top:8px;padding:8px;background:var(--surface-2);border-radius:4px;text-align:center;"><img src="' + o.signature + '" style="max-width:200px;max-height:50px;display:block;margin:0 auto;"></div>' : ''}
     </div>
     <div style="margin-top:16px;">${App._renderAnexosSection('os', id, o.clientName)}</div>
     <div class="overlay-actions" style="margin-top:16px;">
+      ${o.status === 'open' && !o.signature ? '<button class="btn btn-success" onclick="App._signOS(\'' + id + '\')">Assinar</button>' : ''}
       <button class="btn" onclick="App._closeOverlay()">Fechar</button>
       <button class="btn btn-primary" onclick="App._printOS('${id}')">Imprimir</button>
       ${o.status === 'open' ? '<button class="btn btn-success" onclick="App._cancelOS(\'' + id + '\')">Cancelar OS</button>' : ''}
@@ -118,6 +121,7 @@ App._cancelOS = function(id) {
     Audit.action('cancel', 'os', id, 'OS #' + (DB.getOrdemServico(id) || {}).osNumber + ' cancelada');
     App._closeOverlay();
     App.renderOS();
+    App.refreshHoje();
   });
 };
 
@@ -156,8 +160,22 @@ App._confirmGerarOS = function(refId, type, btn) {
   }
   if (!clientName) return;
 
-  DB.addOrdemServico({ clientName, clientId, professional, service, date, time, value, paymentMethod: payment, notes, status: 'open' });
+  var os = DB.addOrdemServico({ clientName, clientId, professional, service, date, time, value, paymentMethod: payment, notes, status: 'open' });
+  if (clientId) Events.emit('crm.os_criada', { clientId: clientId, refId: os.id });
   Audit.action('create', 'os', refId, 'OS gerada para ' + clientName);
   App._closeOverlay();
   App._toast('Ordem de Serviço gerada com sucesso!', 'success');
+  App.refreshHoje();
+  if (App.currentModule === 'atendimento') App.renderAtendimento();
+};
+
+App._signOS = function(id) {
+  var o = DB.getOrdemServico(id);
+  if (!o) return;
+  App._openSignature('Assinar OS #' + o.osNumber, o.signature || null, function(dataUrl) {
+    DB.updateOrdemServico(id, { signature: dataUrl });
+    Audit.action('sign', 'os', id, 'OS #' + o.osNumber + ' assinada');
+    App._toast('OS assinada com sucesso!', 'success');
+    App._viewOS(id);
+  });
 };

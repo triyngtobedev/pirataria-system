@@ -18,14 +18,16 @@ App._validateFile = function(file) {
 App._uploadAnexo = function(file, entity, entityId, clientName, notes, callback) {
   if (!this._validateFile(file)) return;
   const reader = new FileReader();
+  App._showLoading('Anexando arquivo...');
   reader.onload = function(e) {
     const content = e.target.result;
     DB.addAnexo({ entity, entityId, clientName, fileName: file.name, fileType: file.type, fileSize: file.size, content, notes: notes || '' });
     Audit.action('upload', 'anexos', entityId, 'Anexo: ' + file.name + ' (' + entity + ')');
+    App._hideLoading();
     App._toast('Arquivo anexado com sucesso.', 'success');
     if (callback) callback();
   };
-  reader.onerror = function() { App._toast('Erro ao ler o arquivo.', 'error'); };
+  reader.onerror = function() { App._hideLoading(); App._toast('Erro ao ler o arquivo.', 'error'); };
   reader.readAsDataURL(file);
 };
 

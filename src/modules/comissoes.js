@@ -94,6 +94,7 @@ App._deleteComissao = function(id) {
   App._confirm('Remover esta comissão?', function() {
     Audit.action('delete', 'comissoes', id, 'Comissão removida');
     DB.updateComissao(id, { status: 'cancelled' });
+    App._toast('Comissão removida.', 'success');
     App.renderComissoes();
   });
 };

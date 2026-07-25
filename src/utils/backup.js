@@ -19,20 +19,20 @@ const Backup = {
   },
 
   download() {
-    const data = this.exportData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const now = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    const filename = `pirataria-backup-${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}.json`;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    App._toast('Backup exportado com sucesso.', 'success');
+    App._withLoading(null, 'Exportando backup...', function() {
+      const data = Backup.exportData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const filename = `pirataria-backup-${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}.json`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      App._toast('Backup exportado com sucesso.', 'success');
+    });
   },
 
   validate(fileContent) {
@@ -57,8 +57,10 @@ const Backup = {
   },
 
   restore(file, onComplete) {
+    App._showLoading('Lendo arquivo de backup...');
     const reader = new FileReader();
     reader.onload = function(e) {
+      App._hideLoading();
       try {
         const content = JSON.parse(e.target.result);
         const validation = Backup.validate(content);
@@ -88,10 +90,12 @@ const Backup = {
           if (onComplete) onComplete();
         });
       } catch (err) {
+        App._hideLoading();
         App._toast('Erro ao ler o arquivo. Verifique se é um JSON válido.', 'error');
       }
     };
     reader.onerror = function() {
+      App._hideLoading();
       App._toast('Erro ao ler o arquivo.', 'error');
     };
     reader.readAsText(file);

@@ -19,6 +19,8 @@ App.renderAtendimento = function() {
   container.innerHTML = `
     <div class="od-wrap">${this._renderDashboardHtml()}</div>
 
+    ${App._renderNextAction()}
+
     <div class="qs-summary">
       <div class="qs-stat"><span class="qs-num">${allAgendaApps.length + walkins.length}</span>Total</div>
       <div class="qs-stat"><span class="qs-num qs-yellow">${waiting.length + walkinWaiting.length}</span>Aguardando</div>
@@ -29,13 +31,13 @@ App.renderAtendimento = function() {
 
     <div class="qs-agenda">
       ${C.sectionHeader('Agendamentos de hoje')}
-      ${agendaApps.length === 0 ? '<div class="empty-state">Nenhum agendamento para hoje.</div>' : ''}
+      ${agendaApps.length === 0 ? C.emptyStateFull({icon:'calendar', title:'Nenhum agendamento hoje', desc:'Os agendamentos do dia aparecerão aqui.'}) : ''}
       <div class="qs-list">${agendaApps.map(a => this._renderQueueItem(a, 'agenda')).join('')}</div>
     </div>
 
     <div class="qs-walkin">
       ${C.sectionHeader('Avulsos', '<button class="btn btn-primary" onclick="App.showAddToQueue()">+ Adicionar avulso</button>')}
-      ${walkins.length === 0 ? '<div class="empty-state">Nenhum cliente avulso.</div>' : ''}
+      ${walkins.length === 0 ? C.emptyStateFull({icon:'person', title:'Nenhum cliente avulso', desc:'Clientes sem agendamento prévio aparecerão aqui.'}) : ''}
       <div class="qs-list">${walkins.map(q => this._renderQueueItem(q, 'walkin')).join('')}</div>
     </div>`;
 };
@@ -88,9 +90,13 @@ App._renderQueueItem = function(item, type) {
 App.queueStart = function(id, type) {
   if (type === 'agenda') {
     Repos.agenda.update(id, { status: 'in_progress' });
+    var a = Repos.agenda.get(id);
+    if (a && a.clientId) Events.emit('crm.atendimento_iniciado', { clientId: a.clientId, refId: id });
   } else {
     Repos.atendimento.queue.updateStatus(id, 'in_progress');
   }
+  App._toast('Atendimento iniciado.', 'success');
+  App.refreshHoje();
   this.renderAtendimento();
 };
 
@@ -153,12 +159,17 @@ App.doFinishAppointment = function(id) {
   }
   const aAfter = Repos.agenda.get(id);
   App._gerarComissao((aAfter || {}).professional, 'servico', id, 'Atendimento: ' + ((aAfter || {}).clientName), valNum);
-  if (aAfter) App._checkPacoteEUsar(aAfter.clientId, aAfter.service, id, aAfter.professional);
-  Events.emit('atendimento.finished', { id, type: 'agenda', clientName: (aAfter || {}).clientName, value: valNum });
+  Events.emit('atendimento.finished', { id, type: 'agenda', clientName: (aAfter || {}).clientName, value: valNum, clientId: (aAfter || {}).clientId });
+  if (aAfter && aAfter.clientId) Events.emit('crm.atendimento_concluido', { clientId: aAfter.clientId, refId: id });
   Audit.action('complete', 'atendimento', id, 'Atendimento concluído');
   this._closeOverlay();
-  if (aAfter) App._promptGerarOS({ id, type: 'agenda', clientName: aAfter.clientName, service: aAfter.service, professional: aAfter.professional, value, notes: postNotes });
   App._toast('Atendimento concluído.', 'success');
+  if (aAfter) {
+    App._checkPacoteEUsar(aAfter.clientId, aAfter.service, id, aAfter.professional, function() {
+      App._promptGerarOS({ id: id, type: 'agenda', clientName: aAfter.clientName, service: aAfter.service, professional: aAfter.professional, value: value, notes: postNotes });
+    });
+  }
+  App.refreshHoje();
   this.renderAtendimento();
 };
 
@@ -178,6 +189,7 @@ App.doFinishWalkin = function(id) {
   if (q) App._promptGerarOS({ id, type: 'walkin', clientName: q.clientName, service: q.service, professional: q.professional, value, notes: postNotes });
   this._closeOverlay();
   App._toast('Atendimento concluído.', 'success');
+  App.refreshHoje();
   this.renderAtendimento();
 };
 
@@ -187,6 +199,7 @@ App.queueCancel = function(id, type) {
     else { Repos.atendimento.queue.remove(id); }
     App._toast('Atendimento cancelado.', 'info');
     App.renderAtendimento();
+    App.refreshHoje();
   });
 };
 
@@ -221,4 +234,52 @@ App.addToQueue = function() {
   this._closeOverlay();
   App._toast('Avulso adicionado à fila.', 'success');
   this.renderAtendimento();
+};
+
+// ─── Próxima Ação ───
+App._renderNextAction = function() {
+  var today = DB._today();
+  var inProgress = Repos.agenda.byDate(today).filter(function(a) { return a.status === 'in_progress'; });
+  var walkinProgress = Repos.atendimento.queue.list().filter(function(q) { return q.status === 'in_progress'; });
+
+  var active = null;
+  var type = '';
+  if (inProgress.length > 0) { active = inProgress[0]; type = 'agenda'; }
+  else if (walkinProgress.length > 0) { active = walkinProgress[0]; type = 'walkin'; }
+
+  if (!active) return '';
+
+  var clientName = active.clientName;
+  var service = active.service || '';
+  var professional = active.professional || '';
+
+  var ordens = DB.getOrdensServico();
+  var hasOS = ordens.some(function(o) { return o.clientName === clientName && o.date === today; });
+
+  var termos = DB.getTermos();
+  var matchingTermos = termos.filter(function(t) { return t.clientName === clientName && t.procedure === service; });
+  var hasTermo = matchingTermos.length > 0;
+  var termoSigned = matchingTermos.some(function(t) { return t.status === 'signed' || !!t.signature; });
+
+  var ledger = DB.getLedger(today);
+  var hasPayment = ledger.some(function(l) { return l.description && l.description.indexOf(clientName) >= 0; });
+
+  if (!hasOS) {
+    return '<div class="na-card"><div class="na-icon">&#9744;</div><div class="na-body"><span class="na-title">Criar Ordem de Servi\u00e7o</span><span class="na-desc">Atendimento em andamento sem OS vinculada.</span></div><button class="btn btn-primary btn-sm" onclick="App._showOverlay(\'Gerar Ordem de Servi\u00e7o\',App._buildOSFormHtml({id:\'' + active.id + '\',type:\'' + type + '\',clientName:\'' + App._esc(clientName) + '\',service:\'' + App._esc(service) + '\',professional:\'' + App._esc(professional) + '\',value:\'\',notes:\'\'}))">Criar OS</button></div>';
+  }
+
+  if (!hasTermo) {
+    return '<div class="na-card"><div class="na-icon">&#9998;</div><div class="na-body"><span class="na-title">Gerar Termo de Consentimento</span><span class="na-desc">OS criada. Termo de consentimento ainda n\u00e3o foi gerado.</span></div><button class="btn btn-primary btn-sm" onclick="App._showOverlay(\'Novo Termo de Consentimento\',App._buildTermoFormHtml({id:\'' + active.id + '\',type:\'' + type + '\',clientName:\'' + App._esc(clientName) + '\',service:\'' + App._esc(service) + '\',professional:\'' + App._esc(professional) + '\'}))">Gerar Termo</button></div>';
+  }
+
+  if (!termoSigned) {
+    var pendingTermo = matchingTermos.filter(function(t) { return t.status !== 'signed' || !t.signature; })[0] || matchingTermos[0];
+    return '<div class="na-card"><div class="na-icon">&#9997;</div><div class="na-body"><span class="na-title">Coletar Assinatura</span><span class="na-desc">Termo criado, aguardando assinatura do cliente.</span></div><button class="btn btn-primary btn-sm" onclick="App._signTermoDigital(\'' + pendingTermo.id + '\')">Assinar</button></div>';
+  }
+
+  if (!hasPayment) {
+    return '<div class="na-card"><div class="na-icon">&#9733;</div><div class="na-body"><span class="na-title">Registrar Pagamento</span><span class="na-desc">Documentos assinados. Pagamento ainda n\u00e3o foi registrado.</span></div><button class="btn btn-primary btn-sm" onclick="App.navigate(\'financeiro\')">Registrar</button></div>';
+  }
+
+  return '<div class="na-card na-card-success"><div class="na-icon" style="color:var(--green);">&#10003;</div><div class="na-body"><span class="na-title" style="color:var(--green);">Atendimento conclu\u00eddo com sucesso.</span><span class="na-desc">Todas as etapas foram realizadas.</span></div></div>';
 };

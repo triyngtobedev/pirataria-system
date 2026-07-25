@@ -1,22 +1,22 @@
 const Permissions = {
   _rules: {
     admin: {
-      modules: ['agenda', 'clientes', 'atendimento', 'financeiro', 'estoque', 'relatorios', 'studio', 'os', 'termos', 'lembretes', 'comissoes', 'vales', 'pacotes'],
+      modules: ['hoje', 'inbox', 'orcamentos', 'marketing', 'conhecimento', 'aihub', 'agenda', 'clientes', 'atendimento', 'financeiro', 'estoque', 'relatorios', 'studio', 'os', 'termos', 'lembretes', 'comissoes', 'vales', 'pacotes'],
       canManageUsers: true,
       canManageSettings: true,
     },
     piercer: {
-      modules: ['agenda', 'clientes', 'atendimento', 'os', 'termos', 'pacotes'],
+      modules: ['hoje', 'inbox', 'orcamentos', 'agenda', 'clientes', 'atendimento', 'os', 'termos', 'pacotes'],
       canManageUsers: false,
       canManageSettings: false,
     },
     reception: {
-      modules: ['agenda', 'clientes', 'atendimento', 'estoque', 'os', 'termos', 'vales', 'pacotes'],
+      modules: ['hoje', 'inbox', 'orcamentos', 'agenda', 'clientes', 'atendimento', 'estoque', 'os', 'termos', 'vales', 'pacotes'],
       canManageUsers: false,
       canManageSettings: false,
     },
     management: {
-      modules: ['agenda', 'clientes', 'atendimento', 'financeiro', 'estoque', 'relatorios', 'os', 'termos', 'lembretes', 'comissoes', 'vales', 'pacotes'],
+      modules: ['hoje', 'inbox', 'orcamentos', 'agenda', 'clientes', 'atendimento', 'financeiro', 'estoque', 'relatorios', 'os', 'termos', 'lembretes', 'comissoes', 'vales', 'pacotes'],
       canManageUsers: false,
       canManageSettings: true,
     },

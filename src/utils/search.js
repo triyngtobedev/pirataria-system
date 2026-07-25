@@ -45,6 +45,12 @@ const Search = {
             searchFields: [q.clientName, q.service, q.status],
           }))
         ),
+      conhecimento: DB.searchKB(text).map(a => ({
+        id: a.id, module: 'conhecimento',
+        label: a.titulo,
+        sub: (a.categoria || '') + ' — ' + (a.resumo || '').substring(0, 80),
+        searchFields: [a.titulo, a.resumo, a.conteudo, a.categoria, (a.tags || []).join(' ')],
+      })),
     };
   },
 
@@ -53,7 +59,7 @@ const Search = {
     if (!q) return [];
     const index = this.index();
     const results = [];
-    for (const category of ['clientes', 'agenda', 'atendimento']) {
+    for (const category of ['clientes', 'agenda', 'atendimento', 'conhecimento']) {
       for (const item of index[category]) {
         if (item.searchFields.some(f => this._match(f, q))) {
           results.push({ ...item, category });
@@ -85,6 +91,8 @@ const Search = {
       }
     } else if (item.module === 'atendimento') {
       App.navigate('atendimento');
+    } else if (item.module === 'conhecimento') {
+      App.navigate('conhecimento');
     }
   },
 };
@@ -101,7 +109,7 @@ App._onGlobalSearch = function() {
     return;
   }
 
-  const catLabels = { clientes: 'Clientes', agenda: 'Agenda', atendimento: 'Atendimento' };
+  const catLabels = { clientes: 'Clientes', agenda: 'Agenda', atendimento: 'Atendimento', conhecimento: 'Base de Conhecimento' };
   const groups = {};
   results.forEach((r, i) => {
     r._idx = i;

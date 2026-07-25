@@ -130,7 +130,12 @@ const DB = {
       notes: data.notes || '',
       totalVisits: 0,
       lastVisit: null,
-      createdAt: this._now()
+      createdAt: this._now(),
+      crmStatus: data.crmStatus || 'novo_contato',
+      crmNextAction: data.crmNextAction || '',
+      crmNextDate: data.crmNextDate || '',
+      crmPriority: data.crmPriority || 'medium',
+      crmNote: data.crmNote || ''
     };
     clients.push(client);
     this._set('clientes', clients);
@@ -151,6 +156,22 @@ const DB = {
     this._set('clientes', clients);
     const allHistory = this._get('historico');
     this._set('historico', allHistory.filter(h => h.clientId !== id));
+    const allTimeline = this._get('timeline');
+    this._set('timeline', allTimeline.filter(t => t.clientId !== id));
+  },
+
+  // ─── Timeline ───
+  getTimeline() { return this._get('timeline').sort((a, b) => b.createdAt > a.createdAt ? 1 : -1); },
+  getTimelineByClient(clientId) {
+    return this._get('timeline').filter(t => t.clientId === clientId).sort((a, b) => b.createdAt > a.createdAt ? 1 : -1);
+  },
+  addTimeline(data) {
+    const list = this._get('timeline');
+    const entry = { id: this._id(), clientId: data.clientId, type: data.type, description: data.description, refId: data.refId || null, createdAt: this._now() };
+    list.push(entry);
+    if (list.length > 2000) list.splice(0, list.length - 2000);
+    this._set('timeline', list);
+    return entry;
   },
 
   // ─── Histórico de atendimentos ───
@@ -628,8 +649,222 @@ const DB = {
   },
   getLogs(limit) { const all = this._get('logs').sort((a, b) => b.createdAt > a.createdAt ? 1 : -1); return limit ? all.slice(0, limit) : all; },
 
+  // ─── Conversas (Inbox) ───
+  getConversas() { return this._get('conversas').sort((a, b) => (a.updatedAt || a.createdAt) > (b.updatedAt || b.createdAt) ? -1 : 1); },
+  getConversa(id) { return this._get('conversas').find(c => c.id === id) || null; },
+  getConversasByClient(clientId) { return this._get('conversas').filter(c => c.clientId === clientId); },
+  getConversasByStatus(status) { return this._get('conversas').filter(c => c.status === status); },
+  addConversa(data) {
+    const list = this._get('conversas');
+    const entry = { id: this._id(), clientId: data.clientId || null, clientName: data.clientName, phone: data.phone || '', origin: data.origin || 'outro', status: data.status || 'aberta', ultimaInteracao: this._now(), nextAction: data.nextAction || '', nextDate: data.nextDate || '', priority: data.priority || 'medium', note: data.note || '', createdAt: this._now(), updatedAt: this._now() };
+    list.push(entry);
+    this._set('conversas', list);
+    return entry;
+  },
+  updateConversa(id, data) {
+    const list = this._get('conversas'); const i = list.findIndex(c => c.id === id); if (i === -1) return null;
+    data.updatedAt = this._now();
+    list[i] = { ...list[i], ...data };
+    this._set('conversas', list);
+    return list[i];
+  },
+  deleteConversa(id) {
+    const list = this._get('conversas').filter(c => c.id !== id);
+    this._set('conversas', list);
+    const msgs = this._get('conversaMensagens').filter(m => m.conversaId !== id);
+    this._set('conversaMensagens', msgs);
+  },
+
+  // ─── Mensagens da Conversa ───
+  getMensagens(conversaId) {
+    return this._get('conversaMensagens').filter(m => m.conversaId === conversaId).sort((a, b) => b.createdAt > a.createdAt ? 1 : -1);
+  },
+  addMensagem(data) {
+    const list = this._get('conversaMensagens');
+    const entry = { id: this._id(), conversaId: data.conversaId, type: data.type || 'recebida', content: data.content || '', createdAt: this._now() };
+    list.push(entry);
+    if (list.length > 5000) list.splice(0, list.length - 5000);
+    this._set('conversaMensagens', list);
+    this.updateConversa(data.conversaId, { ultimaInteracao: this._now() });
+    return entry;
+  },
+
+  // ─── Orçamentos ───
+  _orcSeq: 0,
+  _nextOrcNumero() {
+    const all = this._get('orcamentos');
+    const max = all.reduce((m, o) => Math.max(m, parseInt(o.numero, 10) || 0), 0);
+    return String(max + 1).padStart(4, '0');
+  },
+  getOrcamentos() { return this._get('orcamentos').sort((a, b) => (b.createdAt || '') > (a.createdAt || '') ? 1 : -1); },
+  getOrcamento(id) { return this._get('orcamentos').find(o => o.id === id) || null; },
+  getOrcamentosByClient(clientId) { return this._get('orcamentos').filter(o => o.clientId === clientId).sort((a, b) => (b.createdAt || '') > (a.createdAt || '') ? 1 : -1); },
+  addOrcamento(data) {
+    const list = this._get('orcamentos');
+    const entry = { id: this._id(), numero: this._nextOrcNumero(), clientId: data.clientId || null, conversationId: data.conversationId || null, nomeCliente: data.nomeCliente, telefone: data.telefone || '', procedimentos: data.procedimentos || '', joias: data.joias || '', observacoes: data.observacoes || '', subtotal: data.subtotal || '0', desconto: data.desconto || '0', valorFinal: data.valorFinal || '0', validade: data.validade || '', status: data.status || 'rascunho', createdAt: this._now(), updatedAt: this._now() };
+    list.push(entry);
+    this._set('orcamentos', list);
+    return entry;
+  },
+  updateOrcamento(id, data) {
+    const list = this._get('orcamentos'); const i = list.findIndex(o => o.id === id); if (i === -1) return null;
+    data.updatedAt = this._now();
+    list[i] = { ...list[i], ...data };
+    this._set('orcamentos', list);
+    return list[i];
+  },
+
+  // ─── Notificações ───
+  getNotificacoes() { return this._get('notificacoes').sort((a, b) => (b.createdAt || '') > (a.createdAt || '') ? 1 : -1); },
+  getNotificacao(id) { return this._get('notificacoes').find(n => n.id === id) || null; },
+  addNotificacao(data) {
+    const list = this._get('notificacoes');
+    const entry = { id: this._id(), tipo: data.tipo || 'info', categoria: data.categoria || 'geral', titulo: data.titulo, descricao: data.descricao || '', prioridade: data.prioridade || 'media', status: 'nao_lida', origemModulo: data.origemModulo || '', origemId: data.origemId || null, clientId: data.clientId || null, conversationId: data.conversationId || null, actionLabel: data.actionLabel || '', actionTarget: data.actionTarget || '', actionParams: data.actionParams || '', createdAt: this._now(), readAt: null, archivedAt: null };
+    list.push(entry);
+    if (list.length > 2000) list.splice(0, list.length - 2000);
+    this._set('notificacoes', list);
+    return entry;
+  },
+  updateNotificacao(id, data) {
+    const list = this._get('notificacoes'); const i = list.findIndex(n => n.id === id); if (i === -1) return null;
+    list[i] = { ...list[i], ...data };
+    this._set('notificacoes', list);
+    return list[i];
+  },
+  getNotificacoesNaoLidas() { return this._get('notificacoes').filter(n => n.status === 'nao_lida'); },
+  getNotificacoesPorOrigem(modulo, origemId) { return this._get('notificacoes').filter(n => n.origemModulo === modulo && n.origemId === origemId); },
+  getNotificacoesPaginadas(page, limit) {
+    var all = this.getNotificacoes();
+    var start = (page || 0) * (limit || 50);
+    return { items: all.slice(start, start + (limit || 50)), total: all.length };
+  },
+
+  // ─── Planos de Acompanhamento (Pós-Atendimento) ───
+  getPlanos() { return this._get('planosAcompanhamento').sort((a, b) => (b.createdAt || '') > (a.createdAt || '') ? 1 : -1); },
+  getPlano(id) { return this._get('planosAcompanhamento').find(p => p.id === id) || null; },
+  getPlanosByClient(clientId) { return this._get('planosAcompanhamento').filter(p => p.clientId === clientId).sort((a, b) => (b.createdAt || '') > (a.createdAt || '') ? 1 : -1); },
+  getPlanosAtivos() { return this._get('planosAcompanhamento').filter(p => p.status === 'ativo'); },
+  addPlano(data) {
+    const list = this._get('planosAcompanhamento');
+    const entry = { id: this._id(), atendimentoId: data.atendimentoId || null, clientId: data.clientId, procedimento: data.procedimento || '', profissional: data.profissional || '', dataProcedimento: data.dataProcedimento || '', status: 'ativo', etapaAtual: 0, createdAt: this._now(), updatedAt: this._now() };
+    list.push(entry);
+    this._set('planosAcompanhamento', list);
+    return entry;
+  },
+  updatePlano(id, data) {
+    const list = this._get('planosAcompanhamento'); const i = list.findIndex(p => p.id === id); if (i === -1) return null;
+    data.updatedAt = this._now();
+    list[i] = { ...list[i], ...data };
+    this._set('planosAcompanhamento', list);
+    return list[i];
+  },
+  getEtapas(planoId) { return this._get('etapasAcompanhamento').filter(e => e.planoId === planoId).sort((a, b) => (a.dias || 0) - (b.dias || 0)); },
+  addEtapa(data) {
+    const list = this._get('etapasAcompanhamento');
+    const entry = { id: this._id(), planoId: data.planoId, label: data.label, dias: data.dias || 0, dataPrevista: data.dataPrevista || '', dataConclusao: null, status: 'pendente', observacao: data.observacao || '', createdAt: this._now() };
+    list.push(entry);
+    this._set('etapasAcompanhamento', list);
+    return entry;
+  },
+  updateEtapa(id, data) {
+    const list = this._get('etapasAcompanhamento'); const i = list.findIndex(e => e.id === id); if (i === -1) return null;
+    list[i] = { ...list[i], ...data };
+    this._set('etapasAcompanhamento', list);
+    return list[i];
+  },
+  getEtapasVencidas() {
+    var today = this._today();
+    return this._get('etapasAcompanhamento').filter(function(e) { return e.status === 'pendente' && e.dataPrevista && e.dataPrevista <= today; });
+  },
+
+  // ─── Marketing ───
+  getCalendario() { return this._get('marketingCalendario').sort((a, b) => (a.dataPrevista || '') > (b.dataPrevista || '') ? 1 : -1); },
+  getCalendarioItem(id) { return this._get('marketingCalendario').find(c => c.id === id) || null; },
+  addCalendarioItem(data) {
+    const list = this._get('marketingCalendario');
+    const entry = { id: this._id(), dataPrevista: data.dataPrevista || '', tipo: data.tipo || 'post', status: data.status || 'ideia', titulo: data.titulo, descricao: data.descricao || '', cta: data.cta || '', observacoes: data.observacoes || '', clientId: data.clientId || null, atendimentoId: data.atendimentoId || null, planoAcompanhamentoId: data.planoAcompanhamentoId || null, perfilDestino: data.perfilDestino || '', createdAt: this._now(), updatedAt: this._now() };
+    list.push(entry);
+    this._set('marketingCalendario', list);
+    return entry;
+  },
+  updateCalendarioItem(id, data) {
+    const list = this._get('marketingCalendario'); const i = list.findIndex(c => c.id === id); if (i === -1) return null;
+    data.updatedAt = this._now();
+    list[i] = { ...list[i], ...data };
+    this._set('marketingCalendario', list);
+    return list[i];
+  },
+
+  getIdeias() { return this._get('marketingIdeias').sort((a, b) => (a.favorita ? 0 : 1) - (b.favorita ? 0 : 1) || a.categoria > b.categoria ? 1 : -1); },
+  addIdeia(data) {
+    const list = this._get('marketingIdeias');
+    const entry = { id: this._id(), categoria: data.categoria || '', titulo: data.titulo, descricao: data.descricao || '', sugestaoCTA: data.sugestaoCTA || '', hashtags: data.hashtags || '', frequencia: data.frequencia || '', favorita: data.favorita || false, createdAt: this._now() };
+    list.push(entry);
+    this._set('marketingIdeias', list);
+    return entry;
+  },
+  updateIdeia(id, data) { const list = this._get('marketingIdeias'); const i = list.findIndex(x => x.id === id); if (i === -1) return null; list[i] = { ...list[i], ...data }; this._set('marketingIdeias', list); return list[i]; },
+
+  getCTAs() { return this._get('marketingCTAs'); },
+  addCTA(data) { const list = this._get('marketingCTAs'); const e = { id: this._id(), texto: data.texto, createdAt: this._now() }; list.push(e); this._set('marketingCTAs', list); return e; },
+  deleteCTA(id) { this._set('marketingCTAs', this._get('marketingCTAs').filter(c => c.id !== id)); },
+
+  getTemplates() { return this._get('marketingTemplates'); },
+  addTemplate(data) {
+    const list = this._get('marketingTemplates');
+    const entry = { id: this._id(), tipo: data.tipo || 'legenda', titulo: data.titulo, conteudo: data.conteudo || '', createdAt: this._now() };
+    list.push(entry);
+    this._set('marketingTemplates', list);
+    return entry;
+  },
+  updateTemplate(id, data) { const list = this._get('marketingTemplates'); const i = list.findIndex(t => t.id === id); if (i === -1) return null; list[i] = { ...list[i], ...data }; this._set('marketingTemplates', list); return list[i]; },
+  deleteTemplate(id) { this._set('marketingTemplates', this._get('marketingTemplates').filter(t => t.id !== id)); },
+
+  // ─── Knowledge Base ───
+  getKBArticles() { return this._get('knowledgeBase').sort((a, b) => (b.updatedAt || '') > (a.updatedAt || '') ? 1 : -1); },
+  getKBArticle(id) { return this._get('knowledgeBase').find(a => a.id === id) || null; },
+  getKBArticlesByTag(tag) {
+    var q = tag.toLowerCase();
+    return this._get('knowledgeBase').filter(function(a) { return a.ativo !== false && a.tags && a.tags.some(function(t) { return t.toLowerCase().indexOf(q) >= 0; }); });
+  },
+  getKBArticlesByCategoria(categoria) { return this._get('knowledgeBase').filter(a => a.categoria === categoria && a.ativo !== false); },
+  addKBArticle(data) {
+    const list = this._get('knowledgeBase');
+    const entry = { id: this._id(), categoria: data.categoria || '', tipo: data.tipo || 'procedimento', titulo: data.titulo, resumo: data.resumo || '', conteudo: data.conteudo || '', tags: data.tags || [], anexos: data.anexos || [], relacionadoCom: data.relacionadoCom || '', favorito: data.favorito || false, ativo: true, versao: 1, createdAt: this._now(), updatedAt: this._now() };
+    list.push(entry);
+    this._set('knowledgeBase', list);
+    return entry;
+  },
+  updateKBArticle(id, data) {
+    const list = this._get('knowledgeBase'); const i = list.findIndex(a => a.id === id); if (i === -1) return null;
+    data.updatedAt = this._now();
+    if (data._novaversao) { data.versao = (list[i].versao || 1) + 1; }
+    delete data._novaversao;
+    list[i] = { ...list[i], ...data };
+    this._set('knowledgeBase', list);
+    return list[i];
+  },
+  searchKB(query) {
+    var q = query.toLowerCase().trim();
+    if (!q) return this.getKBArticles();
+    return this._get('knowledgeBase').filter(function(a) {
+      return a.ativo !== false && (a.titulo.toLowerCase().indexOf(q) >= 0 || a.resumo.toLowerCase().indexOf(q) >= 0 || a.conteudo.toLowerCase().indexOf(q) >= 0 || a.categoria.toLowerCase().indexOf(q) >= 0 || (a.tags && a.tags.some(function(t) { return t.toLowerCase().indexOf(q) >= 0; })));
+    });
+  },
+
+  // ─── Knowledge Base: Versionamento ───
+  getKBVersions(articleId) { return this._get('kbVersions').filter(v => v.articleId === articleId).sort((a, b) => (b.createdAt || '') > (a.createdAt || '') ? 1 : -1); },
+  addKBVersion(data) {
+    const list = this._get('kbVersions');
+    const entry = { id: this._id(), articleId: data.articleId, versao: data.versao || 1, usuario: data.usuario || 'sistema', observacao: data.observacao || '', createdAt: this._now() };
+    list.push(entry);
+    if (list.length > 2000) list.splice(0, list.length - 2000);
+    this._set('kbVersions', list);
+    return entry;
+  },
+
   // ─── Backup ───
-  _collections: ['agenda', 'clientes', 'historico', 'atendimento', 'profissionais', 'servicos', 'horarios', 'studio', 'produtos', 'categorias', 'movimentos', 'vendas', 'caixas', 'lancamentos', 'pagamentos', 'usuarios', 'logs', 'ordensServico', 'termosConsentimento', 'anexos', 'lembretes', 'comissoes', 'vales', 'pacotes'],
+  _collections: ['agenda', 'clientes', 'historico', 'atendimento', 'profissionais', 'servicos', 'horarios', 'studio', 'produtos', 'categorias', 'movimentos', 'vendas', 'caixas', 'lancamentos', 'pagamentos', 'usuarios', 'logs', 'ordensServico', 'termosConsentimento', 'anexos', 'lembretes', 'comissoes', 'vales', 'pacotes', 'timeline', 'conversas', 'conversaMensagens', 'orcamentos', 'notificacoes', 'planosAcompanhamento', 'etapasAcompanhamento', 'marketingCalendario', 'marketingIdeias', 'marketingCTAs', 'marketingTemplates', 'knowledgeBase', 'kbVersions'],
 
   exportAll() {
     const data = {};

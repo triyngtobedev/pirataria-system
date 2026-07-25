@@ -86,7 +86,7 @@ App._addLembrete = function() {
   const clientName = clientId ? (Repos.clientes.list().find(c => c.id === clientId) || {}).name : '';
   DB.addLembrete({ title, description: document.getElementById('lemDesc').value.trim(), date: document.getElementById('lemDate').value, time: document.getElementById('lemTime').value, priority: document.getElementById('lemPriority').value, responsible: document.getElementById('lemResponsible').value, clientId, clientName });
   Audit.action('create', 'lembretes', '', 'Lembrete: ' + title);
-  this._closeOverlay(); this.renderLembretes();
+  this._closeOverlay(); App._toast('Lembrete criado.', 'success'); this.renderLembretes();
 };
 
 App._editLembrete = function(id) {
@@ -109,13 +109,14 @@ App._doEditLembrete = function(id) {
   const clientName = clientId ? (Repos.clientes.list().find(c => c.id === clientId) || {}).name : '';
   DB.updateLembrete(id, { title, description: document.getElementById('lemDesc').value.trim(), date: document.getElementById('lemDate').value, time: document.getElementById('lemTime').value, priority: document.getElementById('lemPriority').value, responsible: document.getElementById('lemResponsible').value, clientId, clientName });
   Audit.action('update', 'lembretes', id, 'Lembrete editado: ' + title);
-  this._closeOverlay(); this.renderLembretes();
+  this._closeOverlay(); App._toast('Lembrete atualizado.', 'success'); this.renderLembretes();
 };
 
 App._completeLembrete = function(id) {
   DB.updateLembrete(id, { status: 'completed' });
   Audit.action('complete', 'lembretes', id, 'Lembrete concluído');
   this.renderLembretes();
+  App.refreshHoje();
 };
 
 App._deleteLembrete = function(id) {

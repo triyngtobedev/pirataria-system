@@ -124,10 +124,10 @@ App._showAddCategory = function() {
   this._showOverlay('Nova categoria', `<div class="form-group"><label>Nome</label><input type="text" id="catName"></div>
     <div class="overlay-actions"><button class="btn" onclick="App._closeOverlay()">Cancelar</button><button class="btn btn-primary" onclick="App._addCategory()">Salvar</button></div>`);
 };
-App._addCategory = function() { const n = document.getElementById('catName').value.trim(); if (!n) return; Repos.produtos.categories.create({ name: n }); this._closeOverlay(); this.renderEstoque(); };
+App._addCategory = function() { const n = document.getElementById('catName').value.trim(); if (!n) return; Repos.produtos.categories.create({ name: n }); this._closeOverlay(); App._toast('Categoria adicionada.', 'success'); this.renderEstoque(); };
 App._editCategory = function(id) { const c = Repos.produtos.categories.list().find(x => x.id === id); if (!c) return; this._showOverlay('Editar categoria', `<div class="form-group"><label>Nome</label><input type="text" id="catName" value="${this._esc(c.name)}"></div><div class="overlay-actions"><button class="btn" onclick="App._closeOverlay()">Cancelar</button><button class="btn btn-primary" onclick="App._doEditCategory('${id}')">Salvar</button></div>`); };
-App._doEditCategory = function(id) { Repos.produtos.categories.update(id, { name: document.getElementById('catName').value.trim() }); this._closeOverlay(); this.renderEstoque(); };
-App._toggleCategory = function(id) { const c = Repos.produtos.categories.list().find(x => x.id === id); if (!c) return; Repos.produtos.categories.update(id, { active: !c.active }); this.renderEstoque(); };
+App._doEditCategory = function(id) { Repos.produtos.categories.update(id, { name: document.getElementById('catName').value.trim() }); this._closeOverlay(); App._toast('Categoria atualizada.', 'success'); this.renderEstoque(); };
+App._toggleCategory = function(id) { const c = Repos.produtos.categories.list().find(x => x.id === id); if (!c) return; Repos.produtos.categories.update(id, { active: !c.active }); App._toast('Categoria ' + (c.active ? 'desativada' : 'ativada') + '.', 'success'); this.renderEstoque(); };
 
 // ─── Movimentações ───
 App._renderMovimentos = function(el) {
@@ -151,7 +151,7 @@ App._renderVendas = function(el) {
   const sales = Repos.produtos.sales.list();
   const products = Repos.produtos.active().filter(p => p.stock > 0);
 
-  let cartHtml = '<div class="empty-state">Carrinho vazio. Adicione produtos abaixo.</div>';
+  let cartHtml = C.emptyStateFull({icon:'cart', title:'Carrinho vazio', desc:'Clique nos produtos ao lado para adicioná-los ao carrinho.'});
   if (this._vendaItems.length > 0) {
     const subtotal = this._vendaItems.reduce((s, i) => s + (parseFloat(i.subtotal) || 0), 0);
     cartHtml = `<table><thead><tr><th>Produto</th><th>Qtd</th><th>Preço</th><th>Subtotal</th><th></th></tr></thead><tbody>
@@ -174,7 +174,7 @@ App._renderVendas = function(el) {
             <span class="et-prod-price">R$ ${this._esc(p.salePrice)}</span>
             <span class="et-prod-stock">Est: ${p.stock}</span>
           </div>
-        `).join('')}${products.length === 0 ? '<div class="empty-state">Nenhum produto disponível.</div>' : ''}</div>
+        `).join('')}${products.length === 0 ? C.emptyStateFull({icon:'box', title:'Nenhum produto', desc:'Cadastre produtos na aba "Produtos".', btnLabel:'+ Novo produto', btnAction:"App._showAddProduct()"}) : ''}</div>
       </div>
       <div class="et-venda-cart">
         <div class="section-title">Carrinho</div>
@@ -211,6 +211,8 @@ App._updateVendaTotal = function() {
 
 App._finishVenda = function() {
   if (this._vendaItems.length === 0) return;
+  if (App._locks['finishVenda']) return;
+  App._locks['finishVenda'] = true;
   const subtotal = this._vendaItems.reduce((s, i) => s + (parseFloat(i.subtotal) || 0), 0);
   const disc = parseFloat(document.getElementById('vendaDiscount').value.replace(',', '.')) || 0;
   const total = Math.max(0, subtotal - disc);
@@ -218,6 +220,7 @@ App._finishVenda = function() {
   Events.emit('venda.completed', { id: sale.id, total, items: this._vendaItems.map(i => ({ ...i })) });
   Audit.action('create', 'estoque', sale.id, 'Venda finalizada');
   this._vendaItems = [];
+  App._locks['finishVenda'] = false;
   App._toast('Venda finalizada com sucesso!', 'success');
   this.renderEstoque();
 };

@@ -44,7 +44,7 @@ App._renderFinDashboard = function(el) {
     ${today.byOrigin.length > 0 ? `<div class="rp-section"><div class="section-title">Por origem</div>
       <div class="table-wrap"><table><thead><tr><th>Origem</th><th>Entradas</th><th>Saídas</th></tr></thead>
       <tbody>${today.byOrigin.map(o => `<tr><td>${this._esc(o.origin)}</td><td>R$ ${o.entries.toFixed(2).replace('.',',')}</td><td>R$ ${o.exits.toFixed(2).replace('.',',')}</td></tr>`).join('')}</tbody></table></div></div>` : ''}
-    ${!today.cashier ? '<div class="empty-state">Nenhum caixa aberto hoje. Abra um caixa na aba "Caixa".</div>' : ''}`;
+    ${!today.cashier ? C.emptyStateFull({icon:'coin', title:'Nenhum caixa aberto', desc:'Abra um caixa na aba "Caixa" para começar.'}) : ''}`;
 };
 
 App._renderFinCaixa = function(el) {
@@ -82,6 +82,7 @@ App._openCashier = function() {
   if (cx) Audit.action('create', 'financeiro', cx.id, 'Caixa aberto por ' + operator);
   App._toast('Caixa aberto.', 'success');
   this.renderFinanceiro();
+  App.refreshHoje();
 };
 
 App._showCloseCashier = function() {
@@ -115,6 +116,7 @@ App._doCloseCashier = function() {
   Audit.action('update', 'financeiro', cashier.id, 'Caixa fechado. Diferença: R$ ' + diff.toFixed(2).replace('.', ','));
   App._toast('Caixa fechado. Diferença: R$ ' + diff.toFixed(2).replace('.', ','), diff === 0 ? 'success' : 'warning');
   this.renderFinanceiro();
+  App.refreshHoje();
 };
 
 App._renderFinLancamentos = function(el) {
@@ -158,6 +160,7 @@ App._addManualEntry = function(type) {
   this._closeOverlay();
   App._toast((type === 'entrada' ? 'Receita' : 'Despesa') + ' registrada.', 'success');
   this.renderFinanceiro();
+  App.refreshHoje();
 };
 
 App._renderFinPagamentos = function(el) {
@@ -169,5 +172,5 @@ App._renderFinPagamentos = function(el) {
     <td><button class="btn btn-sm ${m.active ? 'btn-warning' : 'btn-success'}" onclick="App._togglePaymentMethod('${m.id}')">${m.active ? 'Desativar' : 'Ativar'}</button></td></tr>`).join('')}</tbody></table></div>`;
 };
 App._showAddPaymentMethod = function() { this._showOverlay('Nova forma de pagamento', '<div class="form-group"><label>Nome</label><input type="text" id="pmName"></div><div class="overlay-actions"><button class="btn" onclick="App._closeOverlay()">Cancelar</button><button class="btn btn-primary" onclick="App._addPaymentMethod()">Salvar</button></div>'); };
-App._addPaymentMethod = function() { const n = document.getElementById('pmName').value.trim(); if (!n) return; Repos.financeiro.paymentMethods.create({ name: n }); this._closeOverlay(); this.renderFinanceiro(); };
-App._togglePaymentMethod = function(id) { const m = Repos.financeiro.paymentMethods.list().find(x => x.id === id); if (!m) return; Repos.financeiro.paymentMethods.update(id, { active: !m.active }); this.renderFinanceiro(); };
+App._addPaymentMethod = function() { const n = document.getElementById('pmName').value.trim(); if (!n) return; Repos.financeiro.paymentMethods.create({ name: n }); this._closeOverlay(); App._toast('Forma de pagamento adicionada.', 'success'); this.renderFinanceiro(); };
+App._togglePaymentMethod = function(id) { const m = Repos.financeiro.paymentMethods.list().find(x => x.id === id); if (!m) return; Repos.financeiro.paymentMethods.update(id, { active: !m.active }); App._toast('Forma de pagamento ' + (m.active ? 'desativada' : 'ativada') + '.', 'success'); this.renderFinanceiro(); };

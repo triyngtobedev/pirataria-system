@@ -64,9 +64,9 @@ App._clientTimeline = function(clientId) {
 
   const appointments = DB.getAppointments().filter(a => a.clientId === clientId);
   appointments.forEach(a => {
-    events.push({ date: a.date, time: a.time, type: a.status === 'cancelled' ? 'cancelamento' : 'agendamento', label: a.status === 'cancelled' ? 'Agendamento cancelado: ' + (a.service || '') : 'Agendamento criado: ' + (a.service || '') + ' às ' + a.time });
+    events.push({ date: a.date, time: a.time, type: a.status === 'cancelled' ? 'cancelamento' : 'agendamento', label: a.status === 'cancelled' ? 'Agendamento cancelado: ' + (a.service || '') : 'Agendamento criado: ' + (a.service || '') + ' \u00e0s ' + a.time });
     if (a.status === 'completed') {
-      events.push({ date: a.date, time: a.time, type: 'atendimento', label: 'Atendimento concluído: ' + (a.service || '') });
+      events.push({ date: a.date, time: a.time, type: 'atendimento', label: 'Atendimento conclu\u00eddo: ' + (a.service || '') });
     }
   });
 
@@ -77,6 +77,22 @@ App._clientTimeline = function(clientId) {
     }
   });
 
-  events.sort((a, b) => (a.date + a.time) > (b.date + b.time) ? -1 : 1);
+  // CRM Timeline
+  var crmEvents = DB.getTimelineByClient(clientId);
+  crmEvents.forEach(function(e) {
+    var d = e.createdAt ? e.createdAt.slice(0, 10) : '—';
+    var t = e.createdAt ? e.createdAt.slice(11, 16) : '00:00';
+    var typeMap = {
+      status_alterado: 'cancelamento',
+      agendamento: 'agendamento',
+      atendimento_concluido: 'atendimento',
+      os_criada: 'agendamento',
+      termo_assinado: 'cadastro',
+      pagamento: 'atendimento'
+    };
+    events.push({ date: d, time: t, type: typeMap[e.type] || 'cadastro', label: e.description });
+  });
+
+  events.sort(function(a, b) { return (a.date + a.time) > (b.date + b.time) ? -1 : 1; });
   return events;
 };

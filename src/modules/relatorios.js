@@ -46,6 +46,7 @@ App._getRange = function() {
 
 App._renderReports = function() {
   const el = document.getElementById('reportContent');
+  el.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="loading-spinner-inline"></div><br><br>Calculando indicadores...</div>';
   const range = this._getRange();
   const overview = Reports.overview(range);
   const profRank = Reports.professionalRanking(range);
@@ -126,7 +127,7 @@ App._renderReports = function() {
 
     <div class="rp-section">
       <div class="section-title">Produtos</div>
-      ${invSummary.count === 0 ? '<div class="empty-state">Nenhuma venda no período.</div>' : `
+      ${invSummary.count === 0 ? C.emptyStateFull({icon:'cart', title:'Nenhuma venda', desc:'Nenhuma venda no per\u00edodo selecionado.'}) : `
       <div class="rp-grid">
         <div class="rp-card"><span class="rp-num">${invSummary.count}</span><span class="rp-lbl">Vendas</span></div>
         <div class="rp-card"><span class="rp-num">R$ ${invSummary.totalRevenue.toFixed(2).replace('.', ',')}</span><span class="rp-lbl">Faturamento</span></div>
