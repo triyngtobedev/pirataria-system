@@ -56,6 +56,7 @@ App._renderTopbar = function(dados) {
       '<span class="hj-stat ' + caixaCls + '">' + caixaIcon + ' ' + caixaLabel + '</span>' +
       '<span class="hj-stat" style="color:var(--gold);cursor:pointer;" onclick="App.navigate(\'oportunidades\')"><strong>' + opResumo.total + '</strong> oportunidade' + (opResumo.total !== 1 ? 's' : '') + '</span>' +
       '<span class="hj-stat" style="color:var(--accent-hover);cursor:pointer;" onclick="App.navigate(\'filas\')"><strong>' + Fila.getResumo().total + '</strong> na fila</span>' +
+      '<span class="hj-stat" style="color:var(--green);cursor:pointer;" onclick="App.navigate(\'inbox\')"><strong>' + DB.getConversas().filter(function(c){return c.status!=='encerrada' && c.status==='aguardando_estudio';}).length + '</strong> p/ responder</span>' +
     '</div>' +
     this._renderNotifResumo() +
   '</div>';

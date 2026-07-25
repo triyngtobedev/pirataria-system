@@ -61,9 +61,16 @@ App._setInboxFilter = function(filtro) {
 
 App._onInboxSearch = function() {
   this._inboxFilter = 'todas';
-  this._inboxSearch = document.getElementById('inboxSearch').value;
+  this._inboxSearch = '';
   this._selectedConversa = null;
   this._renderInboxLayout();
+};
+
+App._usarRespostaRapida = function(conversaId, texto) {
+  Inbox.addMensagem(conversaId, 'enviada', texto);
+  App._toast('Resposta r\u00e1pida registrada.', 'success');
+  this._renderInboxLayout();
+  App.refreshHoje();
 };
 
 App._renderConversaItem = function(c, selected) {
@@ -126,6 +133,40 @@ App._renderConversaDetail = function(c) {
 
   var today = DB._today();
 
+  // Assistente de Atendimento
+  var assistente = Inbox.gerarAssistente(c.id);
+  var assistenteHtml = '';
+  if (assistente) {
+    var alertasHtml = assistente.alertas.length > 0
+      ? '<div style="margin-top:6px;">' + assistente.alertas.map(function(a) { return '<div class="inb-crm-info" style="margin-top:3px;padding:4px 8px;font-size:0.72rem;"><span style="color:var(--accent-hover);">\u26A0</span> ' + App._esc(a) + '</div>'; }).join('') + '</div>'
+      : '';
+    var chanceCls = assistente.chanceAgendamento === 'Alta' ? 'color:var(--green);' : assistente.chanceAgendamento === 'Baixa' ? 'color:var(--text-dim);' : 'color:var(--gold);';
+
+    assistenteHtml = '<div class="inb-section" style="background:var(--surface-2);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:10px 12px;margin-bottom:16px;">' +
+      '<div class="inb-section-title" style="border:none;padding:0;margin-bottom:8px;">\uD83E\uDD16 Assistente de Atendimento</div>' +
+      '<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;">' + App._esc(assistente.resumo) + '</div>' +
+      '<div class="form-row" style="gap:8px;flex-wrap:wrap;margin-bottom:4px;">' +
+        '<div style="flex:1;min-width:140px;"><span style="font-size:0.65rem;text-transform:uppercase;color:var(--text-dim);">\u00daltima pergunta</span><div style="font-size:0.78rem;">' + App._esc(assistente.ultimaPergunta) + '</div></div>' +
+        '<div style="flex:1;min-width:140px;"><span style="font-size:0.65rem;text-transform:uppercase;color:var(--text-dim);">\u00daltima resposta</span><div style="font-size:0.78rem;">' + App._esc(assistente.ultimaResposta) + '</div></div>' +
+      '</div>' +
+      '<div class="form-row" style="gap:8px;flex-wrap:wrap;margin-bottom:4px;">' +
+        '<div><span style="font-size:0.65rem;text-transform:uppercase;color:var(--text-dim);">Espera</span><div style="font-size:0.78rem;">' + assistente.tempoSemResposta + '</div></div>' +
+        '<div><span style="font-size:0.65rem;text-transform:uppercase;color:var(--text-dim);">Status</span><div style="font-size:0.78rem;">' + assistente.status + '</div></div>' +
+        '<div><span style="font-size:0.65rem;text-transform:uppercase;color:var(--text-dim);">Pr\u00f3xima a\u00e7\u00e3o</span><div style="font-size:0.78rem;font-weight:500;">' + assistente.proximaAcao + '</div></div>' +
+        '<div><span style="font-size:0.65rem;text-transform:uppercase;color:var(--text-dim);">Chance agenda.</span><div style="font-size:0.78rem;' + chanceCls + '">' + assistente.chanceAgendamento + '</div></div>' +
+      '</div>' +
+      alertasHtml +
+      '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-light);">' +
+        '<div style="font-size:0.68rem;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">Respostas r\u00e1pidas</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:4px;">' +
+          assistente.respostasRapidas.map(function(r) {
+            return '<button class="btn btn-sm" style="font-size:0.68rem;padding:3px 8px;" onclick="App._usarRespostaRapida(\'' + c.id + '\',\'' + App._esc(r.texto) + '\')" title="' + App._esc(r.texto) + '">' + App._esc(r.label) + '</button>';
+          }).join('') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
   return '<div class="inb-detail-wrap">' +
     '<div class="inb-detail-header">' +
       '<div class="inb-detail-title">' + this._esc(c.clientName) + '</div>' +
@@ -133,6 +174,8 @@ App._renderConversaDetail = function(c) {
       (clientLink ? '<div style="margin-top:4px;">' + clientLink + '</div>' : '') +
       crmInfo +
     '</div>' +
+
+    assistenteHtml +
 
     '<div class="inb-section"><div class="inb-section-title">Pr\u00f3xima a\u00e7\u00e3o</div>' +
       '<div class="inb-nextaction">' +
