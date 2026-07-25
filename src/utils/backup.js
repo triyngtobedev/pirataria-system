@@ -40,13 +40,13 @@ const Backup = {
       return { valid: false, error: 'Arquivo inválido ou corrompido.' };
     }
     if (!fileContent.meta || !fileContent.collections) {
-      return { valid: false, error: 'Estrutura do arquivo não reconhecida. Verifique se é um backup do Pirataria System.' };
+      return { valid: false, error: 'Estrutura do arquivo não reconhecida. Verifique se é um backup do Body Art OS.' };
     }
     if (!fileContent.meta.schemaVersion) {
       return { valid: false, error: 'Versão do schema não encontrada. Arquivo incompatível.' };
     }
     if (fileContent.meta.schemaVersion > this.SCHEMA_VERSION) {
-      return { valid: false, error: 'Backup de uma versão mais recente do sistema. Atualize o Pirataria System antes de restaurar.' };
+      return { valid: false, error: 'Backup de uma versão mais recente do sistema. Atualize o Body Art OS antes de restaurar.' };
     }
     const required = DB._collections;
     const missing = required.filter(c => !(c in fileContent.collections));

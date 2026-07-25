@@ -126,7 +126,7 @@ App._printTermo = function(id) {
   win.document.write('<div class="line">Assinatura do cliente</div>');
   if (t.status === 'signed') win.document.write('<p style="margin-top:12px;font-size:10pt;color:#666;">Assinado em: ' + (t.signedAt || '—') + '</p>');
   win.document.write('</div>');
-  win.document.write('<div class="footer">Documento gerado pelo Pirataria System em ' + new Date().toLocaleString('pt-BR') + '</div>');
+  win.document.write('<div class="footer">Documento gerado pelo Body Art OS em ' + new Date().toLocaleString('pt-BR') + '</div>');
   win.document.write('<div class="no-print" style="text-align:center;margin-top:20px;"><button onclick="window.print()" style="padding:10px 24px;font-size:12pt;cursor:pointer;">Imprimir</button></div>');
   win.document.close();
 };

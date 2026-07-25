@@ -543,7 +543,7 @@ App._renderOnboardingChecklist = function() {
   var allDone = checks.every(function(c) { return c.done; });
   if (allDone) {
     this._onboardingDone = true;
-    return '<div class="ob-wrap ob-complete"><div class="ob-title">Parab\u00e9ns!</div><div class="ob-desc">O Pirataria System est\u00e1 pronto para o uso di\u00e1rio.</div></div>';
+    return '<div class="ob-wrap ob-complete"><div class="ob-title">Parab\u00e9ns!</div><div class="ob-desc">O Body Art OS est\u00e1 pronto para o uso di\u00e1rio.</div></div>';
   }
 
   var html = '<div class="ob-wrap">';

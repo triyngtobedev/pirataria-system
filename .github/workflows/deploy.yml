@@ -123,7 +123,7 @@ jobs:
       - name: Commit version.json back to repo
         run: |
           git config user.name "bodyartos-bot"
-          git config user.email "bot@pirataria.com"
+          git config user.email "bot@bodyartos.com"
           git add version.json
           git diff --cached --quiet || git commit -m "chore: auto-update version.json [skip ci]"
           git push origin master

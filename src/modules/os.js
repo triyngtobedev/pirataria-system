@@ -109,7 +109,7 @@ App._printOS = function(id) {
   if (o.notes) win.document.write('<tr><th>Observações</th><td>' + App._esc(o.notes) + '</td></tr>');
   win.document.write('<tr><th>Assinatura do cliente</th><td style="height:60px;"></td></tr>');
   win.document.write('</tbody></table>');
-  win.document.write('<div class="footer">Documento gerado pelo Pirataria System em ' + new Date().toLocaleString('pt-BR') + '</div>');
+  win.document.write('<div class="footer">Documento gerado pelo Body Art OS em ' + new Date().toLocaleString('pt-BR') + '</div>');
   win.document.write('<div class="no-print" style="text-align:center;margin-top:20px;"><button onclick="window.print()" style="padding:10px 24px;font-size:12pt;cursor:pointer;">Imprimir</button></div>');
   win.document.write('</body></html>');
   win.document.close();

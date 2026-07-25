@@ -1,7 +1,7 @@
 {
-  "name": "pirataria-system",
+  "name": "bodyartos",
   "version": "1.0.0",
-  "description": "Sistema de gestão para Pirataria Body Art",
+  "description": "Body Art OS — Sistema de gestão para Pirataria Body Art",
   "scripts": {
     "start": "npx serve ."
   },
