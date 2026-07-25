@@ -34,7 +34,7 @@ App._filterTermos = function() {
 };
 
 App._renderTermoList = function(list) {
-  if (list.length === 0) return C.emptyState('Nenhum termo de consentimento encontrado.');
+  if (list.length === 0) return L.empty('Nenhum termo de consentimento encontrado.');
   return '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Cliente</th><th>Procedimento</th><th>Profissional</th><th>Status</th><th></th></tr></thead><tbody>' +
     list.map(t => {
       const d = t.createdAt ? t.createdAt.slice(0, 10) : '—';

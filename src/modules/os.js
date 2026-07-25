@@ -38,7 +38,7 @@ App._filterOS = function() {
 };
 
 App._renderOSList = function(ordens) {
-  if (ordens.length === 0) return C.emptyState('Nenhuma ordem de serviço encontrada.');
+  if (ordens.length === 0) return L.empty('Nenhuma ordem de serviço encontrada.');
   const statusLabels = { open: 'Aberta', completed: 'Concluída', cancelled: 'Cancelada' };
   const statusClasses = { open: 'badge-scheduled', completed: 'badge-completed', cancelled: 'badge-cancelled' };
   return '<div class="table-wrap"><table><thead><tr><th>OS</th><th>Data</th><th>Cliente</th><th>Serviço</th><th>Profissional</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody>' +

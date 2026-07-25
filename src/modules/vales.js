@@ -37,7 +37,7 @@ App._filterVales = function() {
 };
 
 App._renderValeList = function(list) {
-  if (list.length === 0) return C.emptyState('Nenhum vale encontrado.');
+  if (list.length === 0) return L.empty('Nenhum vale encontrado.');
   const statusLabels = { ativo: 'Ativo', utilizado: 'Utilizado', expirado: 'Expirado', cancelado: 'Cancelado' };
   const statusClasses = { ativo: 'badge-completed', utilizado: 'badge-scheduled', expirado: 'badge-cancelled', cancelado: 'badge-cancelled' };
   return '<div class="table-wrap"><table><thead><tr><th>Criação</th><th>Cliente</th><th>Original</th><th>Saldo</th><th>Status</th><th>Motivo</th><th></th></tr></thead><tbody>' +

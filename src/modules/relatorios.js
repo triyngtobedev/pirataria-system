@@ -68,7 +68,7 @@ App._renderReports = function() {
 
     <div class="rp-section">
       <div class="section-title">Profissionais</div>
-      ${profRank.length === 0 ? C.emptyState('Nenhum dado no período.') : `
+      ${profRank.length === 0 ? L.empty('Nenhum dado no período.') : `
       <div class="rp-table-wrap"><table>
         <thead><tr><th>Profissional</th><th>Atendimentos</th><th>Faturamento</th><th>Ticket médio</th></tr></thead>
         <tbody>${profRank.map(p => `
@@ -84,7 +84,7 @@ App._renderReports = function() {
 
     <div class="rp-section">
       <div class="section-title">Serviços</div>
-      ${servRank.length === 0 ? C.emptyState('Nenhum dado no período.') : `
+      ${servRank.length === 0 ? L.empty('Nenhum dado no período.') : `
       <div class="rp-table-wrap"><table>
         <thead><tr><th>Serviço</th><th>Atendimentos</th><th>%</th><th>Faturamento</th></tr></thead>
         <tbody>${servRank.map(s => `
@@ -114,7 +114,7 @@ App._renderReports = function() {
 
     <div class="rp-section">
       <div class="section-title">Agenda</div>
-      ${agendaRates.total === 0 ? C.emptyState('Nenhum agendamento no período.') : `
+      ${agendaRates.total === 0 ? L.empty('Nenhum agendamento no período.') : `
       <div class="rp-grid">
         <div class="rp-card rp-card-green"><span class="rp-num">${agendaRates.completionRate.toFixed(1)}%</span><span class="rp-lbl">Conclusão</span></div>
         <div class="rp-card rp-card-red"><span class="rp-num">${agendaRates.cancelRate.toFixed(1)}%</span><span class="rp-lbl">Cancelamento</span></div>
@@ -127,7 +127,7 @@ App._renderReports = function() {
 
     <div class="rp-section">
       <div class="section-title">Produtos</div>
-      ${invSummary.count === 0 ? C.emptyStateFull({icon:'cart', title:'Nenhuma venda', desc:'Nenhuma venda no per\u00edodo selecionado.'}) : `
+      ${invSummary.count === 0 ? L.empty('Nenhuma venda', 'Nenhuma venda no per\u00edodo selecionado.', 'cart') : `
       <div class="rp-grid">
         <div class="rp-card"><span class="rp-num">${invSummary.count}</span><span class="rp-lbl">Vendas</span></div>
         <div class="rp-card"><span class="rp-num">R$ ${invSummary.totalRevenue.toFixed(2).replace('.', ',')}</span><span class="rp-lbl">Faturamento</span></div>
@@ -152,7 +152,7 @@ App._renderReports = function() {
 
     <div class="rp-section">
       <div class="section-title">Financeiro</div>
-      ${finSummary.count === 0 ? '<div class="empty-state">Nenhum lançamento no período.</div>' : `
+      ${finSummary.count === 0 ? L.empty('Nenhum lançamento no período.') : `
       <div class="rp-grid">
         <div class="rp-card rp-card-green"><span class="rp-num">R$ ${finSummary.entries.toFixed(2).replace('.', ',')}</span><span class="rp-lbl">Receitas</span></div>
         <div class="rp-card rp-card-red"><span class="rp-num">R$ ${finSummary.exits.toFixed(2).replace('.', ',')}</span><span class="rp-lbl">Despesas</span></div>

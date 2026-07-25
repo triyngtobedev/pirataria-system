@@ -31,13 +31,13 @@ App.renderAtendimento = function() {
 
     <div class="qs-agenda">
       ${C.sectionHeader('Agendamentos de hoje')}
-      ${agendaApps.length === 0 ? C.emptyStateFull({icon:'calendar', title:'Nenhum agendamento hoje', desc:'Os agendamentos do dia aparecerão aqui.'}) : ''}
+      ${agendaApps.length === 0 ? L.empty('Nenhum agendamento hoje', 'Os agendamentos do dia aparecerão aqui.', 'calendar') : ''}
       <div class="qs-list">${agendaApps.map(a => this._renderQueueItem(a, 'agenda')).join('')}</div>
     </div>
 
     <div class="qs-walkin">
       ${C.sectionHeader('Avulsos', '<button class="btn btn-primary" onclick="App.showAddToQueue()">+ Adicionar avulso</button>')}
-      ${walkins.length === 0 ? C.emptyStateFull({icon:'person', title:'Nenhum cliente avulso', desc:'Clientes sem agendamento prévio aparecerão aqui.'}) : ''}
+      ${walkins.length === 0 ? L.empty('Nenhum cliente avulso', 'Clientes sem agendamento prévio aparecerão aqui.', 'person') : ''}
       <div class="qs-list">${walkins.map(q => this._renderQueueItem(q, 'walkin')).join('')}</div>
     </div>`;
 };

@@ -75,7 +75,7 @@ App._renderHojeAtual = function() {
       '<div class="hj-bloco">' +
         C.sectionHeader('1. Responder WhatsApp', '<span class="hj-contador">' + conversasSemResp.length + '</span>') +
         (conversasSemResp.length === 0
-          ? C.emptyStateFull({icon:'bell', title:'Todas as conversas respondidas', desc:'Nenhuma mensagem aguardando resposta.'})
+          ? L.empty('Todas as conversas respondidas', 'Nenhuma mensagem aguardando resposta.', 'bell')
           : '<div class="hj-card-list">' + conversasSemResp.slice(0, 5).map(function(c) {
             return '<div class="hj-card hj-card-urg" style="cursor:pointer;" onclick="App.navigate(\'inbox\')"><div class="hj-card-main"><div class="hj-card-avatar">' + App._iniciais(c.clientName) + '</div><div class="hj-card-body"><div class="hj-card-title">' + App._esc(c.clientName) + '</div><div class="hj-card-desc">' + (Inbox.ORIGEM_LABELS[c.origin] || c.origin) + ' \u2022 ' + App._tempoRelativo(c.ultimaInteracao) + (c.priority === 'high' ? ' \u2022 Prioridade alta' : '') + '</div></div><div class="hj-card-actions"><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();App.navigate(\'inbox\')">Responder</button></div></div></div>';
           }).join('') + '</div>') +
@@ -86,7 +86,7 @@ App._renderHojeAtual = function() {
       '<div class="hj-bloco">' +
         C.sectionHeader('2. Agendamentos', (fluxoAgendamento > 0 ? '<span style="font-size:0.68rem;color:var(--accent-hover);margin-right:8px;">' + fluxoAgendamento + ' em andamento</span>' : '') + '<span class="hj-contador">' + (pending.length + confirmed.length) + '</span>') +
         (agendaHoje.length === 0
-          ? C.emptyStateFull({icon:'calendar', title:'Nenhum agendamento hoje', desc:'Os agendamentos aparecer\u00e3o aqui.'})
+          ? L.empty('Nenhum agendamento hoje', 'Os agendamentos aparecer\u00e3o aqui.', 'calendar')
           : '<div class="hj-card-list">' + agendaHoje.slice(0, 6).map(function(a) {
             var precisaConf = a.status === 'pending';
             var emAtend = a.status === 'in_progress';
@@ -397,7 +397,7 @@ App._renderBlocoAgenda = function(items) {
   var total = items.length;
 
   if (total === 0) {
-    return '<div class="hj-bloco">' + C.sectionHeader('Agenda de Hoje') + C.emptyStateFull({icon:'calendar', title:'Nenhum agendamento hoje', desc:'Os agendamentos do dia aparecer\u00e3o aqui.'}) + '</div>';
+    return '<div class="hj-bloco">' + C.sectionHeader('Agenda de Hoje') + L.empty('Nenhum agendamento hoje', 'Os agendamentos do dia aparecer\u00e3o aqui.', 'calendar') + '</div>';
   }
 
   var limite = 5;

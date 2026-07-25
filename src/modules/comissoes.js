@@ -50,7 +50,7 @@ App._filterComs = function() {
 };
 
 App._renderComList = function(list) {
-  if (list.length === 0) return C.emptyState('Nenhuma comissão encontrada.');
+  if (list.length === 0) return L.empty('Nenhuma comissão encontrada.');
   const selAll = list.some(c => c.status === 'pending');
   const statusLabels = { pending: 'Pendente', paid: 'Pago' };
   const statusClasses = { pending: 'badge-scheduled', paid: 'badge-completed' };

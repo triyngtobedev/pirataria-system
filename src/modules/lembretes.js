@@ -37,7 +37,7 @@ App._filterLems = function() {
 };
 
 App._renderLemList = function(list) {
-  if (list.length === 0) return C.emptyState('Nenhum lembrete encontrado.');
+  if (list.length === 0) return L.empty('Nenhum lembrete encontrado.');
   const today = DB._today();
   const priorityLabels = { high: 'Alta', medium: 'Média', low: 'Baixa' };
   const priorityClasses = { high: 'badge-cancelled', medium: 'badge-scheduled', low: 'badge-completed' };

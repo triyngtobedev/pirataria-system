@@ -59,7 +59,7 @@ App._renderMktCalendario = function(el) {
 
   html += '<div class="flex gap-8 mb-12"><button class="btn btn-primary btn-sm" onclick="App._showNewMktItem()">+ Novo conte\u00fado</button></div>';
 
-  if (items.length === 0) { html += C.emptyStateFull({icon:'calendar', title:'Nenhum conte\u00fado encontrado', desc:'Use os filtros ou crie um novo conte\u00fado.'}); el.innerHTML = html; return; }
+  if (items.length === 0) { html += L.empty('Nenhum conte\u00fado encontrado', 'Use os filtros ou crie um novo conte\u00fado.', 'calendar'); el.innerHTML = html; return; }
 
   html += '<div style="display:flex;flex-direction:column;gap:6px;">';
   items.forEach(function(item) {
@@ -155,7 +155,7 @@ App._saveMktItemStatus = function(id) {
 App._renderMktIdeias = function(el) {
   var ideias = Marketing.getIdeias();
   var html = '<div class="flex gap-8 mb-12"><button class="btn btn-primary btn-sm" onclick="App._showNewIdeia()">+ Nova ideia</button></div>';
-  if (ideias.length === 0) { html += C.emptyStateFull({icon:'bell', title:'Nenhuma ideia cadastrada', desc:'Crie ideias para alimentar o calend\u00e1rio editorial.'}); el.innerHTML = html; return; }
+  if (ideias.length === 0) { html += L.empty('Nenhuma ideia cadastrada', 'Crie ideias para alimentar o calend\u00e1rio editorial.', 'bell'); el.innerHTML = html; return; }
   html += '<div class="rp-grid">';
   ideias.forEach(function(i) {
     html += '<div class="rp-card" style="text-align:left;"><div class="flex-between"><span class="rp-lbl" style="font-size:0.65rem;">' + App._esc(i.categoria) + '</span>' + (i.favorita ? '<span style="color:var(--gold);">\u2605</span>' : '') + '</div><div class="rp-num" style="font-size:0.9rem;margin:4px 0;">' + App._esc(i.titulo) + '</div>' + (i.descricao ? '<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:6px;">' + App._esc(i.descricao) + '</div>' : '') + (i.hashtags ? '<div style="font-size:0.65rem;color:var(--gold-dim);">' + App._esc(i.hashtags) + '</div>' : '') + '<div class="flex gap-8 mt-12"><button class="btn btn-sm" onclick="App._mktIdeiaParaCalendario(\'' + i.id + '\')">Usar</button><button class="btn btn-sm" onclick="Marketing.updateIdeia(\'' + i.id + '\',{favorita:' + (!i.favorita) + '});App._renderMktIdeias(document.getElementById(\'mktContent\'));">' + (i.favorita ? 'Desfavoritar' : 'Favoritar') + '</button></div></div>';
@@ -239,7 +239,7 @@ App._renderMktTemplates = function(el) {
   html += '<div class="flex gap-8 mb-12"><button class="btn btn-primary btn-sm" onclick="App._showNewTemplate(\'' + ativo + '\')">+ Novo</button></div>';
 
   var templates = Marketing.getTemplates(ativo);
-  if (templates.length === 0) { html += C.emptyState('Nenhum template cadastrado.'); el.innerHTML = html; return; }
+  if (templates.length === 0) { html += L.empty('Nenhum template cadastrado.'); el.innerHTML = html; return; }
   html += '<div style="display:flex;flex-direction:column;gap:8px;">';
   templates.forEach(function(t) {
     html += '<div style="background:var(--surface-2);border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:10px 12px;"><div class="flex-between"><strong>' + App._esc(t.titulo) + '</strong><button class="btn btn-sm btn-danger" onclick="Marketing.deleteTemplate(\'' + t.id + '\');App._renderMktTemplates(document.getElementById(\'mktContent\'))">Remover</button></div><div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;white-space:pre-wrap;">' + App._esc(t.conteudo) + '</div></div>';

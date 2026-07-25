@@ -122,7 +122,7 @@ App.openClientPanel = function(id) {
   // ─── Histórico ───
   let historyHtml = '';
   if (history.length === 0) {
-    historyHtml = C.emptyStateFull({icon:'clock', title:'Nenhum atendimento registrado', desc:'Os atendimentos realizados aparecerão aqui.'});
+    historyHtml = L.empty('Nenhum atendimento registrado', 'Os atendimentos realizados aparecerão aqui.', 'clock');
   } else {
     historyHtml = history.map(h => {
       return `<div class="history-item">
@@ -145,7 +145,7 @@ App.openClientPanel = function(id) {
   // ─── Linha do Tempo ───
   let timelineHtml = '';
   if (timeline.length === 0) {
-    timelineHtml = C.emptyStateFull({icon:'clock', title:'Nenhum evento registrado', desc:'O histórico de interações com o cliente aparecerá aqui.'});
+    timelineHtml = L.empty('Nenhum evento registrado', 'O histórico de interações com o cliente aparecerá aqui.', 'clock');
   } else {
     timelineHtml = '<div class="cp-timeline">';
     timeline.forEach(e => {
@@ -162,7 +162,7 @@ App.openClientPanel = function(id) {
   document.getElementById('panelBody').innerHTML = `
     <div class="panel-section">
       <div class="panel-section-title">Resumo</div>
-      ${summaryHtml || '<div class="empty-state">Sem dados.</div>'}
+      ${summaryHtml || L.empty('Sem dados.')}
     </div>
 
     <div class="panel-divider"></div>

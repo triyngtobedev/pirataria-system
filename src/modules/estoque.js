@@ -151,7 +151,7 @@ App._renderVendas = function(el) {
   const sales = Repos.produtos.sales.list();
   const products = Repos.produtos.active().filter(p => p.stock > 0);
 
-  let cartHtml = C.emptyStateFull({icon:'cart', title:'Carrinho vazio', desc:'Clique nos produtos ao lado para adicioná-los ao carrinho.'});
+  let cartHtml = L.empty('Carrinho vazio', 'Clique nos produtos ao lado para adicioná-los ao carrinho.', 'cart');
   if (this._vendaItems.length > 0) {
     const subtotal = this._vendaItems.reduce((s, i) => s + (parseFloat(i.subtotal) || 0), 0);
     cartHtml = `<table><thead><tr><th>Produto</th><th>Qtd</th><th>Preço</th><th>Subtotal</th><th></th></tr></thead><tbody>
@@ -183,7 +183,7 @@ App._renderVendas = function(el) {
     </div>
     <div class="module-section" style="margin-top:24px;">
       <div class="section-title">Vendas recentes</div>
-      ${sales.length === 0 ? '<div class="empty-state">Nenhuma venda registrada.</div>' :
+      ${sales.length === 0 ? L.empty('Nenhuma venda registrada.') :
       `<div class="table-wrap"><table><thead><tr><th>Data</th><th>Itens</th><th>Desconto</th><th>Total</th></tr></thead><tbody>
       ${sales.slice(0, 50).map(s => `<tr><td class="text-muted text-sm">${s.createdAt ? s.createdAt.slice(0, 16).replace('T', ' ') : '—'}</td><td>${(s.items || []).length}</td><td class="text-muted text-sm">R$ ${(parseFloat(s.discount) || 0).toFixed(2).replace('.',',')}</td><td><strong>R$ ${(parseFloat(s.total) || 0).toFixed(2).replace('.',',')}</strong></td></tr>`).join('')}
       </tbody></table></div>`}

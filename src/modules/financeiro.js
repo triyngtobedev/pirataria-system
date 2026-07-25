@@ -44,7 +44,7 @@ App._renderFinDashboard = function(el) {
     ${today.byOrigin.length > 0 ? `<div class="rp-section"><div class="section-title">Por origem</div>
       <div class="table-wrap"><table><thead><tr><th>Origem</th><th>Entradas</th><th>Saídas</th></tr></thead>
       <tbody>${today.byOrigin.map(o => `<tr><td>${this._esc(o.origin)}</td><td>R$ ${o.entries.toFixed(2).replace('.',',')}</td><td>R$ ${o.exits.toFixed(2).replace('.',',')}</td></tr>`).join('')}</tbody></table></div></div>` : ''}
-    ${!today.cashier ? C.emptyStateFull({icon:'coin', title:'Nenhum caixa aberto', desc:'Abra um caixa na aba "Caixa" para começar.'}) : ''}`;
+    ${!today.cashier ? L.empty('Nenhum caixa aberto', 'Abra um caixa na aba "Caixa" para começar.', 'coin') : ''}`;
 };
 
 App._renderFinCaixa = function(el) {

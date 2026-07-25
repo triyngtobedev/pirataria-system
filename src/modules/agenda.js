@@ -172,7 +172,7 @@ App._renderDayView = function() {
 
   let listHtml = '';
   if (apps.length === 0) {
-    listHtml = C.emptyStateFull({icon:'calendar', title:'Nenhum agendamento', desc:'Nenhum agendamento para este dia.'});
+    listHtml = L.empty('Nenhum agendamento', 'Nenhum agendamento para este dia.', 'calendar');
   } else {
     listHtml = '<div class="dv-list">';
     apps.forEach(a => {

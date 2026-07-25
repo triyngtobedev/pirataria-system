@@ -46,7 +46,7 @@ App._filterPac = function() {
 };
 
 App._renderPacList = function(list) {
-  if (list.length === 0) return C.emptyState('Nenhum pacote encontrado.');
+  if (list.length === 0) return L.empty('Nenhum pacote encontrado.');
   const statusLabels = { ativo: 'Ativo', concluido: 'Concluído', expirado: 'Expirado', cancelado: 'Cancelado' };
   const statusClasses = { ativo: 'badge-completed', concluido: 'badge-scheduled', expirado: 'badge-cancelled', cancelado: 'badge-cancelled' };
   return '<div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Pacote</th><th>Serviço</th><th>Sessões</th><th>Restam</th><th>Validade</th><th>Status</th><th></th></tr></thead><tbody>' +
