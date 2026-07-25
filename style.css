@@ -1116,6 +1116,43 @@ input.has-error, select.has-error, textarea.has-error { border-color: var(--colo
 .cap-rank-body { flex:1; font-size:0.82rem; }
 .cap-rank-val { font-size:0.7rem; color:var(--text-muted); text-align:right; }
 
+/* ─── Reativação (Clientes para Reativação) ─── */
+.rea-wrap { display:flex; flex-direction:column; gap:12px; }
+.rea-contadores { display:flex; flex-wrap:wrap; gap:4px; padding:8px 0; }
+.rea-chip { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:var(--radius-sm); background:var(--surface-2); border:1px solid var(--border); font-size:0.72rem; cursor:pointer; white-space:nowrap; }
+.rea-chip:hover { border-color:var(--accent); }
+.rea-chip-ativa { background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
+.rea-chip-count { background:var(--bg-inset); border-radius:8px; padding:0 5px; font-size:0.65rem; font-weight:600; }
+.rea-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.rea-busca { flex:1; min-width:200px; }
+.rea-busca input { width:100%; padding:6px 10px; font-size:0.82rem; background:var(--color-bg); border:1px solid var(--color-border); border-radius:var(--radius-sm); color:var(--color-text); }
+.rea-controles { display:flex; gap:4px; align-items:center; }
+.rea-batch { display:flex; align-items:center; gap:6px; padding:8px 12px; background:var(--accent-dim); border:1px solid var(--accent); border-radius:var(--radius-sm); flex-wrap:wrap; }
+.rea-lista { display:flex; flex-direction:column; gap:6px; }
+.rea-card { display:flex; align-items:flex-start; gap:10px; padding:12px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); }
+.rea-card:hover { border-color:var(--accent-dim); }
+.rea-sel { background:var(--accent-dim); border-color:var(--accent); }
+.rea-card-left { padding-top:2px; }
+.rea-card-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
+.rea-card-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.rea-nome { font-size:0.9rem; }
+.rea-class { font-size:0.6rem; padding:2px 8px; border-radius:3px; font-weight:600; text-transform:uppercase; }
+.rea-cls-hoje { background:#dc262620; color:#dc2626; }
+.rea-cls-semana { background:#f59e0b20; color:#f59e0b; }
+.rea-cls-baixa { background:#6b728020; color:#6b7280; }
+.rea-score { display:inline-block; width:26px; height:26px; line-height:26px; text-align:center; border-radius:50%; font-size:0.65rem; font-weight:700; margin-left:auto; }
+.rea-score-alta { background:#dc262620; color:#dc2626; }
+.rea-score-media { background:#f59e0b20; color:#f59e0b; }
+.rea-score-baixa { background:#6b728020; color:#6b7280; }
+.rea-card-info { font-size:0.72rem; color:var(--text-muted); display:flex; flex-wrap:wrap; gap:2px; }
+.rea-card-detalhes { display:flex; gap:12px; font-size:0.72rem; flex-wrap:wrap; }
+.rea-servico { color:var(--text); }
+.rea-horario { color:var(--text-muted); }
+.rea-motivos { display:flex; flex-wrap:wrap; gap:2px; margin-top:2px; }
+.rea-prob { font-size:0.7rem; color:var(--text-muted); }
+.rea-booster { color:#f59e0b; font-weight:600; }
+.rea-card-actions { display:flex; flex-direction:column; gap:4px; flex-shrink:0; }
+
 /* ─── Pendências (Central de Pendências) ─── */
 .pen-wrap { display:flex; flex-direction:column; gap:12px; }
 .pen-contadores { display:flex; flex-wrap:wrap; gap:4px; padding:8px 0; }
