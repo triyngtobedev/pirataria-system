@@ -15,20 +15,110 @@ App.renderHoje = function() {
 
 App._renderHojeAtual = function() {
   var dados = this._hojeData;
-  var filtrados = this._aplicarFiltro(dados);
+  var hoje = DB._today();
+  var rCom = Comunicacao.getResumoOperacional();
+
+  // Coletar dados para as seções
+  var conversasSemResp = DB.getConversas().filter(function(c) { return c.status !== 'encerrada' && c.status === 'aguardando_estudio'; });
+  var agendaHoje = DB.getAppointmentsByDate(hoje).filter(function(a) { return a.status !== 'cancelled'; });
+  var inProgress = agendaHoje.filter(function(a) { return a.status === 'in_progress'; });
+  var pending = agendaHoje.filter(function(a) { return a.status === 'pending'; });
+  var confirmed = agendaHoje.filter(function(a) { return a.status === 'confirmed'; });
+  var igData = Marketing.collectInstagram();
+  var igHoje = igData.items.filter(function(i) { return i.isToday && i.statusCalc !== 'publicado'; });
+  var igAtrasados = igData.items.filter(function(i) { return i.isOverdue; });
+
+  var concluidos = agendaHoje.filter(function(a) { return a.status === 'completed'; }).length;
+  var totalPend = rCom.totalPendencias;
+  var progresso = Math.min(100, Math.round((concluidos / Math.max(agendaHoje.length, 1)) * 50 + (totalPend === 0 ? 50 : Math.max(0, 50 - totalPend * 5))));
+
+  // AI Hub - Plano do Dia
+  var plano = AIHub.collect().filter(function(i) { return i.prioridade <= 1; });
+  var planoTitulo = 'Bom dia!';
+  var primeiraTarefa = plano.length > 0 ? plano[0].titulo : 'Nenhuma prioridade cr\u00edtica';
+  var maiorPrioridade = plano.length > 0 ? plano[0].categoria : 'Tudo em ordem';
+  var principalRisco = plano.filter(function(i) { return i.tipo === 'alerta'; }).length > 0 ? plano.filter(function(i) { return i.tipo === 'alerta'; })[0].titulo : 'Nenhum risco identificado';
+  var proxPub = igHoje.length > 0 ? igHoje[0].titulo + ' (' + igHoje[0].perfilDestino + ')' : 'Nenhuma';
+  var proxAgenda = agendaHoje.length > 0 ? agendaHoje[0].clientName + ' \u00e0s ' + agendaHoje[0].time : 'Nenhum';
+  var qtdConversas = conversasSemResp.length;
 
   document.getElementById('moduleContent').innerHTML =
     '<div class="hj-wrap">' +
+      // Topbar
       this._renderTopbar(dados) +
-      this._renderResumo(dados) +
-      this._renderComunicacaoResumo() +
-      this._renderFiltros() +
-      this._renderBlocoAcao('A\u00e7\u00f5es Priorit\u00e1rias', filtrados.blocoAcoes, 'bell', 'atendimento') +
-      this._renderBlocoAgenda(filtrados.blocoAgenda) +
-      this._renderBlocoAcao('Retornos e Acompanhamentos', filtrados.blocoRetornos, 'clock', 'lembretes') +
-      this._renderBlocoAcao('Clientes em Negocia\u00e7\u00e3o', filtrados.blocoNegociacoes, 'person', 'clientes') +
-      this._renderBlocoAcao('Pend\u00eancias de Ontem', filtrados.blocoPendencias, 'document', 'atendimento') +
-      this._renderBlocoMarketing(filtrados.blocoMarketing) +
+
+      // Plano do Dia (AI Hub)
+      '<div class="hj-resumo" style="border-left:3px solid var(--gold);">' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;width:100%;">' +
+          '<div class="hj-resumo-item" style="flex:0 0 auto;min-width:auto;padding-right:12px;border-right:1px solid var(--border-light);"><span class="hj-resumo-lbl" style="font-size:0.6rem;">Primeira tarefa</span><span class="hj-resumo-val" style="font-size:0.85rem;">' + App._esc(primeiraTarefa) + '</span></div>' +
+          '<div class="hj-resumo-item" style="flex:0 0 auto;min-width:auto;padding-right:12px;border-right:1px solid var(--border-light);"><span class="hj-resumo-lbl" style="font-size:0.6rem;">Prioridade</span><span class="hj-resumo-val" style="font-size:0.85rem;">' + App._esc(maiorPrioridade) + '</span></div>' +
+          '<div class="hj-resumo-item" style="flex:0 0 auto;min-width:auto;padding-right:12px;border-right:1px solid var(--border-light);"><span class="hj-resumo-lbl" style="font-size:0.6rem;">Risco</span><span class="hj-resumo-val" style="font-size:0.85rem;color:var(--accent-hover);">' + App._esc(principalRisco) + '</span></div>' +
+          '<div class="hj-resumo-item" style="flex:0 0 auto;min-width:auto;padding-right:12px;border-right:1px solid var(--border-light);"><span class="hj-resumo-lbl" style="font-size:0.6rem;">Pr\u00f3x. publica\u00e7\u00e3o</span><span class="hj-resumo-val" style="font-size:0.85rem;">' + App._esc(proxPub) + '</span></div>' +
+          '<div class="hj-resumo-item" style="flex:0 0 auto;min-width:auto;padding-right:12px;border-right:1px solid var(--border-light);"><span class="hj-resumo-lbl" style="font-size:0.6rem;">Pr\u00f3x. agenda</span><span class="hj-resumo-val" style="font-size:0.85rem;">' + App._esc(proxAgenda) + '</span></div>' +
+          '<div class="hj-resumo-item" style="flex:0 0 auto;min-width:auto;"><span class="hj-resumo-lbl" style="font-size:0.6rem;">WhatsApp</span><span class="hj-resumo-val" style="font-size:0.85rem;">' + qtdConversas + ' pendente' + (qtdConversas !== 1 ? 's' : '') + '</span></div>' +
+        '</div>' +
+      '</div>' +
+
+      // Seção 1: Responder WhatsApp
+      '<div class="hj-bloco">' +
+        C.sectionHeader('1. Responder WhatsApp', '<span class="hj-contador">' + conversasSemResp.length + '</span>') +
+        (conversasSemResp.length === 0
+          ? C.emptyStateFull({icon:'bell', title:'Todas as conversas respondidas', desc:'Nenhuma mensagem aguardando resposta.'})
+          : '<div class="hj-card-list">' + conversasSemResp.slice(0, 5).map(function(c) {
+            return '<div class="hj-card hj-card-urg" style="cursor:pointer;" onclick="App.navigate(\'inbox\')"><div class="hj-card-main"><div class="hj-card-avatar">' + App._iniciais(c.clientName) + '</div><div class="hj-card-body"><div class="hj-card-title">' + App._esc(c.clientName) + '</div><div class="hj-card-desc">' + (Inbox.ORIGEM_LABELS[c.origin] || c.origin) + ' \u2022 ' + App._tempoRelativo(c.ultimaInteracao) + (c.priority === 'high' ? ' \u2022 Prioridade alta' : '') + '</div></div><div class="hj-card-actions"><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();App.navigate(\'inbox\')">Responder</button></div></div></div>';
+          }).join('') + '</div>') +
+        (conversasSemResp.length > 5 ? '<div class="hj-mais" onclick="App.navigate(\'inbox\')">Ver todas (+' + (conversasSemResp.length - 5) + ')</div>' : '') +
+      '</div>' +
+
+      // Seção 2: Agendamentos
+      '<div class="hj-bloco">' +
+        C.sectionHeader('2. Agendamentos', '<span class="hj-contador">' + (pending.length + confirmed.length) + '</span>') +
+        (agendaHoje.length === 0
+          ? C.emptyStateFull({icon:'calendar', title:'Nenhum agendamento hoje', desc:'Os agendamentos aparecer\u00e3o aqui.'})
+          : '<div class="hj-card-list">' + agendaHoje.slice(0, 6).map(function(a) {
+            var precisaConf = a.status === 'pending';
+            var emAtend = a.status === 'in_progress';
+            return '<div class="hj-card ' + (precisaConf ? 'hj-card-warn' : emAtend ? 'hj-card-urg' : '') + '"><div class="hj-card-main"><div class="hj-card-avatar">' + App._iniciais(a.clientName) + '</div><div class="hj-card-body"><div class="hj-card-title">' + App._esc(a.clientName) + (precisaConf ? ' <span class="badge badge-scheduled">Pendente</span>' : emAtend ? ' <span class="badge badge-progress">Atendendo</span>' : ' <span class="badge badge-completed">Confirmado</span>') + '</div><div class="hj-card-desc">' + App._esc(a.service) + (a.professional ? ' \u2014 ' + Repos.studio.professionals.label(a.professional) : '') + ' \u2022 ' + a.time + '</div></div><div class="hj-card-actions">' +
+              (precisaConf ? '<button class="btn btn-sm" style="font-size:0.68rem;color:var(--green);" onclick="Repos.agenda.update(\'' + a.id + '\',{status:\'confirmed\'});App.renderHoje();">Confirmar</button>' : '') +
+              (!emAtend && !precisaConf ? '<button class="btn btn-sm" style="font-size:0.68rem;color:var(--green);" onclick="App.queueStart(\'' + a.id + '\',\'agenda\');App.renderHoje();">Iniciar</button>' : '') +
+              '<button class="btn btn-sm" style="font-size:0.68rem;" onclick="App.navigate(\'agenda\')">Abrir</button>' +
+            '</div></div></div>';
+          }).join('') + '</div>') +
+      '</div>' +
+
+      // Seção 3: Atendimento de Hoje
+      '<div class="hj-bloco">' +
+        C.sectionHeader('3. Atendimento de Hoje', '<span class="hj-contador">' + (inProgress.length + pending.length + confirmed.length) + '</span>') +
+        this._renderBlocoAcao('Em andamento', dados.blocoAcoes, 'bell', 'atendimento') +
+      '</div>' +
+
+      // Seção 4: Instagram
+      '<div class="hj-bloco">' +
+        C.sectionHeader('4. Instagram', '<span class="hj-contador">' + (igHoje.length + igAtrasados.length) + '</span>') +
+        (igHoje.length === 0 && igAtrasados.length === 0
+          ? '<div class="hj-bloco hj-bloco-placeholder"><div class="hj-placeholder"><span class="hj-placeholder-icon">&#9654;</span><span class="hj-placeholder-text">Nenhuma publica\u00e7\u00e3o pendente.</span></div></div>'
+          : '<div class="hj-card-list">' +
+            igHoje.slice(0, 3).map(function(i) {
+              return '<div class="hj-card" style="cursor:pointer;"><div class="hj-card-main"><div class="hj-card-avatar" style="background:var(--accent-dim);color:var(--accent-hover);">IG</div><div class="hj-card-body"><div class="hj-card-title">' + App._esc(i.titulo) + ' <span class="badge badge-progress">' + i.tipo + '</span></div><div class="hj-card-desc">' + App._esc(i.perfilDestino) + (i.cta ? ' \u2022 CTA: ' + App._esc(i.cta) : '') + '</div></div><div class="hj-card-actions"><button class="btn btn-sm" style="font-size:0.68rem;color:var(--green);" onclick="Marketing.updateItem(\'' + i.id + '\',{status:\'publicado\'});App.renderHoje();">Publicar</button></div></div></div>';
+            }).join('') +
+            igAtrasados.slice(0, 2).map(function(i) {
+              return '<div class="hj-card hj-card-urg" style="cursor:pointer;"><div class="hj-card-main"><div class="hj-card-avatar" style="background:var(--red-dim);color:var(--accent-hover);">IG</div><div class="hj-card-body"><div class="hj-card-title">' + App._esc(i.titulo) + ' <span class="badge badge-cancelled">Atrasado</span></div><div class="hj-card-desc">' + App._esc(i.perfilDestino) + ' \u2022 ' + i.dataPrevista + '</div></div><div class="hj-card-actions"><button class="btn btn-sm" style="font-size:0.68rem;" onclick="App.navigate(\'marketing\')">Abrir</button></div></div></div>';
+            }).join('') +
+          '</div>') +
+        (igData.items.length > 5 ? '<div class="hj-mais" onclick="App.navigate(\'marketing\')">Ver todas (+' + (igData.items.length - 5) + ')</div>' : '') +
+      '</div>' +
+
+      // Seção 5: Encerramento
+      '<div class="hj-bloco">' +
+        C.sectionHeader('5. Encerramento', '') +
+        '<div class="hj-resumo" style="margin-bottom:14px;">' +
+          '<div class="hj-resumo-item"><span class="hj-resumo-val">' + concluidos + '/' + agendaHoje.length + '</span><span class="hj-resumo-lbl">atend. conclu\u00eddos</span></div>' +
+          '<div class="hj-resumo-item"><span class="hj-resumo-val">' + (totalPend > 0 ? totalPend : 0) + '</span><span class="hj-resumo-lbl">pend\u00eancias</span></div>' +
+          '<div class="hj-resumo-item"><span class="hj-resumo-val" style="color:' + (progresso >= 80 ? 'var(--green)' : progresso >= 50 ? 'var(--gold)' : 'var(--accent-hover)') + ';">' + progresso + '%</span><span class="hj-resumo-lbl">progresso</span></div>' +
+        '</div>' +
+        this._renderBlocoAcao('Retornos do dia', dados.blocoRetornos, 'clock', 'lembretes') +
+        this._renderNotifResumo() +
+      '</div>' +
     '</div>';
 };
 
