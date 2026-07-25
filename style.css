@@ -1065,6 +1065,57 @@ input.has-error, select.has-error, textarea.has-error { border-color: var(--colo
 .inb-msg-content { display:block; line-height:1.4; }
 .inb-msg-time { display:block; font-size:0.6rem; color:var(--text-dim); margin-top:2px; }
 
+/* ─── Capacidade (Análise de Ocupação) ─── */
+.cap-wrap { display:flex; flex-direction:column; gap:14px; }
+.cap-aba { display:flex; gap:4px; }
+.cap-metrics { display:flex; flex-wrap:wrap; gap:8px; }
+.cap-card { flex:1; min-width:100px; padding:12px 14px; border-radius:var(--radius-sm); border:1px solid var(--border); display:flex; flex-direction:column; gap:2px; }
+.cap-card-val { font-size:1.2rem; font-weight:700; }
+.cap-card-lbl { font-size:0.65rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); }
+.cap-card-blue { border-left:3px solid #3b82f6; }
+.cap-card-red { border-left:3px solid #dc2626; }
+.cap-card-gold { border-left:3px solid #f59e0b; }
+.cap-card-purple { border-left:3px solid #8b5cf6; }
+.cap-card-teal { border-left:3px solid #14b8a6; }
+.cap-bar-wrap { height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+.cap-bar { height:100%; border-radius:4px; transition:width 0.4s; }
+.cap-bar-green { background:#16a34a; }
+.cap-bar-yellow { background:#f59e0b; }
+.cap-bar-red { background:#dc2626; }
+.cap-rapidas { display:flex; flex-wrap:wrap; gap:6px; }
+.cap-section { display:flex; flex-direction:column; gap:8px; }
+.cap-section-title { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-muted); border-bottom:1px solid var(--border-light); padding-bottom:6px; }
+.cap-timeline { display:flex; flex-direction:column; gap:2px; }
+.cap-tl-item { display:flex; align-items:center; gap:8px; padding:4px 8px; border-radius:var(--radius-sm); font-size:0.78rem; }
+.cap-tl-hora { width:40px; font-size:0.7rem; color:var(--text-muted); font-weight:600; text-align:right; }
+.cap-tl-bar { width:4px; height:24px; border-radius:2px; flex-shrink:0; }
+.cap-tl-label { flex:1; font-size:0.78rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cap-slots { display:flex; flex-wrap:wrap; gap:6px; }
+.cap-slot { display:flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); cursor:pointer; transition:all 0.15s; }
+.cap-slot:hover { border-color:var(--accent); background:var(--accent-dim); }
+.cap-slot-short { border-color:var(--yellow); border-style:dashed; }
+.cap-slot-hora { font-size:0.9rem; font-weight:700; }
+.cap-slot-dur { font-size:0.65rem; color:var(--text-muted); }
+.cap-slot-cta { font-size:0.7rem; color:var(--accent); font-weight:600; }
+.cap-cal { display:grid; grid-template-columns:repeat(auto-fill, minmax(80px, 1fr)); gap:6px; }
+.cap-cal-dia { padding:8px 6px; border-radius:var(--radius-sm); border:1px solid var(--border); text-align:center; cursor:pointer; }
+.cap-cal-dia:hover { border-color:var(--accent); }
+.cap-cal-cheio { background:#dc262615; border-color:#dc262640; }
+.cap-cal-medio { background:#f59e0b15; border-color:#f59e0b40; }
+.cap-cal-vazio { background:#16a34a15; border-color:#16a34a40; }
+.cap-cal-nome { display:block; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); }
+.cap-cal-num { display:block; font-size:0.95rem; font-weight:700; margin:2px 0; }
+.cap-cal-taxa { display:block; font-size:0.65rem; font-weight:600; }
+.cap-tabela-wrap { overflow-x:auto; }
+.cap-tabela { width:100%; border-collapse:collapse; font-size:0.78rem; }
+.cap-tabela th { text-align:left; padding:6px; border-bottom:2px solid var(--border); font-size:0.63rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); white-space:nowrap; }
+.cap-tabela td { padding:6px; border-bottom:1px solid var(--border-light); }
+.cap-rank-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--border); cursor:pointer; }
+.cap-rank-item:hover { background:var(--surface-hover); }
+.cap-rank-pos { font-size:1rem; font-weight:700; color:var(--text-muted); width:28px; text-align:center; }
+.cap-rank-body { flex:1; font-size:0.82rem; }
+.cap-rank-val { font-size:0.7rem; color:var(--text-muted); text-align:right; }
+
 /* ─── Pendências (Central de Pendências) ─── */
 .pen-wrap { display:flex; flex-direction:column; gap:12px; }
 .pen-contadores { display:flex; flex-wrap:wrap; gap:4px; padding:8px 0; }
