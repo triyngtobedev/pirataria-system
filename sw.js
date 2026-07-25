@@ -48,6 +48,7 @@ const ASSETS = [
   '/src/utils/confirmacao.js',
   '/src/modules/confirmacao.js',
   '/src/utils/agendamento_assistente.js',
+  '/src/utils/googleCalendar.js',
   '/src/components/index.js',
   '/src/components/emptyState.js',
   '/src/components/badge.js',

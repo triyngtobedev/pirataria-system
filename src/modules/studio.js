@@ -102,7 +102,30 @@ App.renderStudio = function() {
     </div>
 
     <div class="module-section">
-      <div class="section-title">Backup e Restauração</div>
+      <div class="section-title">Google Calendar</div>
+      <div class="card">
+        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px;line-height:1.5;">
+          Conecte o Google Calendar para sincronizar automaticamente os agendamentos.
+        </p>
+        <div class="form-group"><label>Client ID do Google</label>
+          <input type="text" id="cfgGClientId" value="${this._esc(s.gClientId || '')}" placeholder="Cole seu Client ID do Google Cloud">
+        </div>
+        <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:8px;">
+          ${GoogleCalendar.isConnected()
+            ? '<span style="color:var(--green);">\u2713 Conectado</span> \u2022 Calend\u00e1rio: ' + App._esc(GoogleCalendar.getConfig().calendarName || '—') + ' \u2022 Eventos: ' + (GoogleCalendar.getConfig().eventosSincronizados || 0) + ' \u2022 \u00daltima sinc: ' + (GoogleCalendar.getConfig().ultimaSincronizacao ? new Date(GoogleCalendar.getConfig().ultimaSincronizacao).toLocaleString('pt-BR') : '—')
+            : '<span style="color:var(--text-dim);">\u25CB Desconectado</span>'}
+        </div>
+        <div class="flex gap-8">
+          ${GoogleCalendar.isConnected()
+            ? '<button class="btn btn-sm" onclick="GoogleCalendar.syncAll()">Sincronizar agora</button><button class="btn btn-sm btn-danger" onclick="GoogleCalendar.disconnect()">Desconectar</button>'
+            : '<button class="btn btn-primary btn-sm" onclick="GoogleCalendar.authorize(document.getElementById(\'cfgGClientId\').value.trim())">Conectar Google Calendar</button>'}
+          <button class="btn btn-sm" onclick="App.saveStudio()">Salvar Client ID</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-section">
+      <div class="section-title">Backup e Restaura\u00e7\u00e3o</div>
       <div class="card">
         <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:14px;line-height:1.5;">
           Exporte todos os dados do sistema para um arquivo JSON ou restaure um backup anterior.
@@ -275,6 +298,7 @@ App.saveStudio = function() {
     { id: 'cfgPhone', rules: ['phone'], label: 'Telefone' },
     { id: 'cfgInsta', rules: ['instagram'], label: 'Instagram' },
   ])) return;
+  var gClientId = document.getElementById('cfgGClientId');
   Repos.studio.settings.save({
     studioName: document.getElementById('cfgName').value.trim(),
     fantasia: document.getElementById('cfgFantasia').value.trim(),
@@ -286,7 +310,8 @@ App.saveStudio = function() {
     instagram: document.getElementById('cfgInsta').value.trim(),
     email: document.getElementById('cfgEmail').value.trim(),
     businessHours: document.getElementById('cfgHours').value.trim(),
-    about: document.getElementById('cfgAbout').value.trim()
+    about: document.getElementById('cfgAbout').value.trim(),
+    gClientId: gClientId ? gClientId.value.trim() : ''
   });
   App._toast('Informações salvas.', 'success');
   this.renderStudio();

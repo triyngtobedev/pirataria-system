@@ -209,6 +209,25 @@ const AIHub = {
 
   // ─── Coletores públicos ───
 
+  _analiseGoogleCalendar: function() {
+    var insights = [];
+    var status = GoogleCalendar.getSyncStatus();
+    if (!status.connected) {
+      insights.push(AIHub._make('alerta', 'google_calendar', 2, 'Google Calendar n\u00e3o conectado', 'Conecte o Google Calendar para sincronizar os agendamentos automaticamente.', 'studio', null, 'Configurar', 'navigate', 'studio'));
+      return insights;
+    }
+    if (status.falha) {
+      insights.push(AIHub._make('alerta', 'google_calendar', 1, 'Falha na sincroniza\u00e7\u00e3o com Google Calendar', status.falha, 'studio', null, 'Verificar', 'navigate', 'studio'));
+    }
+    if (status.ultimaSincronizacao) {
+      var horas = Math.floor((Date.now() - new Date(status.ultimaSincronizacao).getTime()) / 3600000);
+      if (horas > 24) {
+        insights.push(AIHub._make('info', 'google_calendar', 2, '\u00daltima sincroniza\u00e7\u00e3o h\u00e1 ' + horas + 'h', 'Sincronize o calend\u00e1rio para manter os eventos atualizados.', 'studio', null, 'Sincronizar', 'navigate', 'studio'));
+      }
+    }
+    return insights;
+  },
+
   _analiseWhatsApp: function() {
     var insights = [];
     var wpp = typeof Inbox.collectWhatsApp === 'function' ? Inbox.collectWhatsApp() : [];
@@ -374,7 +393,7 @@ const AIHub = {
   collect: function() {
     return [].concat(
       this._analiseOnboarding(),
-      this._analiseWhatsApp(),
+      this._analiseGoogleCalendar(),
       this._analiseInstagram(),
       this._analiseAgendamento(),
       this._analiseConfirmacao(),

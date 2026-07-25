@@ -42,6 +42,9 @@ App._renderHojeAtual = function() {
   var proxAgenda = agendaHoje.length > 0 ? agendaHoje[0].clientName + ' \u00e0s ' + agendaHoje[0].time : 'Nenhum';
   var qtdConversas = conversasSemResp.length;
   var fluxoAgendamento = 0;
+  var gcStatus = GoogleCalendar.getSyncStatus();
+  var gcAlerta = !gcStatus.connected ? 'GC n\u00e3o conectado' : gcStatus.falha ? 'Falha GC' : '';
+  var fluxoAgendamento = 0;
   var conversasAtivas = DB.getConversas().filter(function(c) { return c.status !== 'encerrada'; });
   for (var fc = 0; fc < conversasAtivas.length; fc++) {
     var est = AgendamentoAssistente.getEstadoFluxo(conversasAtivas[fc].id);
@@ -64,6 +67,9 @@ App._renderHojeAtual = function() {
           '<div class="hj-resumo-item" style="flex:0 0 auto;min-width:auto;"><span class="hj-resumo-lbl" style="font-size:0.6rem;">WhatsApp</span><span class="hj-resumo-val" style="font-size:0.85rem;">' + qtdConversas + ' pendente' + (qtdConversas !== 1 ? 's' : '') + '</span></div>' +
         '</div>' +
       '</div>' +
+
+      // Google Calendar alert
+      (gcAlerta ? '<div class="hj-notif-resumo hj-notif-critico" onclick="App.navigate(\'studio\')" style="cursor:pointer;margin-bottom:12px;"><span class="hj-notif-icon">&#128197;</span><span class="hj-notif-text"><strong>' + gcAlerta + '</strong></span><span class="hj-notif-btn">Configurar</span></div>' : '') +
 
       // Seção 1: Responder WhatsApp
       '<div class="hj-bloco">' +
