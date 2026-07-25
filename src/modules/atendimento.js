@@ -96,7 +96,7 @@ App.queueStart = function(id, type) {
     Repos.atendimento.queue.updateStatus(id, 'in_progress');
   }
   App._toast('Atendimento iniciado.', 'success');
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
   this.renderAtendimento();
 };
 
@@ -169,7 +169,7 @@ App.doFinishAppointment = function(id) {
       App._promptGerarOS({ id: id, type: 'agenda', clientName: aAfter.clientName, service: aAfter.service, professional: aAfter.professional, value: value, notes: postNotes });
     });
   }
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
   this.renderAtendimento();
 };
 
@@ -189,7 +189,7 @@ App.doFinishWalkin = function(id) {
   if (q) App._promptGerarOS({ id, type: 'walkin', clientName: q.clientName, service: q.service, professional: q.professional, value, notes: postNotes });
   this._closeOverlay();
   App._toast('Atendimento concluído.', 'success');
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
   this.renderAtendimento();
 };
 
@@ -199,7 +199,7 @@ App.queueCancel = function(id, type) {
     else { Repos.atendimento.queue.remove(id); }
     App._toast('Atendimento cancelado.', 'info');
     App.renderAtendimento();
-    App.refreshHoje();
+    EventBus.emit('meudia.updated');
   });
 };
 

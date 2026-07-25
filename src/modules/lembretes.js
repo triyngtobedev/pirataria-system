@@ -116,7 +116,7 @@ App._completeLembrete = function(id) {
   DB.updateLembrete(id, { status: 'completed' });
   Audit.action('complete', 'lembretes', id, 'Lembrete concluído');
   this.renderLembretes();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App._deleteLembrete = function(id) {

@@ -76,7 +76,7 @@ App._signTermoDigital = function(id) {
     if (t.clientId) Events.emit('crm.termo_assinado', { clientId: t.clientId, refId: id });
     Audit.action('sign', 'termos', id, 'Termo de consentimento assinado digitalmente');
     App._toast('Termo assinado com sucesso!', 'success');
-    App.refreshHoje();
+    EventBus.emit('meudia.updated');
     if (App.currentModule === 'atendimento') {
       App.renderAtendimento();
     } else {
@@ -192,7 +192,7 @@ App._saveTermoAndContinue = function(refId, type) {
   App._closeOverlay();
   App._toast('Termo de consentimento salvo!', 'success');
 
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
   if (isActive && App.currentModule === 'atendimento') {
     App.renderAtendimento();
   } else {

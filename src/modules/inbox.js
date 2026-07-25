@@ -74,7 +74,7 @@ App._usarRespostaRapida = function(conversaId, texto) {
     WhatsApp.sendFromInbox(conversaId, texto).then(function() {
       App._toast('Resposta enviada pelo WhatsApp.', 'success');
       App._renderInboxLayout();
-      App.refreshHoje();
+      EventBus.emit('meudia.updated');
     }).catch(function(err) {
       App._toast('Resposta registrada, mas falha ao enviar WhatsApp: ' + (err.message || ''), 'warning');
       App._renderInboxLayout();
@@ -82,7 +82,7 @@ App._usarRespostaRapida = function(conversaId, texto) {
   } else {
     App._toast('Resposta r\u00e1pida registrada.', 'success');
     this._renderInboxLayout();
-    App.refreshHoje();
+    EventBus.emit('meudia.updated');
   }
 };
 
@@ -365,7 +365,7 @@ App._sendAssistedDraft = function(conversaId) {
     WhatsApp.sendFromInbox(conversaId, msg).then(function() {
       App._toast('Resposta enviada pelo WhatsApp.', 'success');
       App._renderInboxLayout();
-      App.refreshHoje();
+      EventBus.emit('meudia.updated');
     }).catch(function(err) {
       App._toast('Registrada, mas falha ao enviar WhatsApp.', 'warning');
       App._renderInboxLayout();
@@ -373,7 +373,7 @@ App._sendAssistedDraft = function(conversaId) {
   } else {
     App._toast('Resposta registrada.', 'success');
     this._renderInboxLayout();
-    App.refreshHoje();
+    EventBus.emit('meudia.updated');
   }
 };
 
@@ -390,7 +390,7 @@ App._discardAssistedDraft = function(conversaId) {
   Inbox.logSugestao(conversaId, 'descartada', '');
   App._toast('Sugest\u00e3o descartada.', 'info');
   this._renderInboxLayout();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 // ─── Modo Assistido de Agendamento ───
@@ -408,7 +408,7 @@ App._confirmarPreAgendamento = function(conversaId) {
   if (a) {
     App._toast('Agendamento confirmado: ' + a.date + ' \u00e0s ' + a.time, 'success');
     this._renderInboxLayout();
-    App.refreshHoje();
+    EventBus.emit('meudia.updated');
   } else {
     App._toast('Erro ao confirmar agendamento.', 'error');
   }
@@ -426,7 +426,7 @@ App._agendarPeloAssistente = function(conversaId, horario, data) {
   if (a) {
     App._toast('Agendamento criado: ' + data + ' \u00e0s ' + horario, 'success');
     this._renderInboxLayout();
-    App.refreshHoje();
+    EventBus.emit('meudia.updated');
   }
 };
 
@@ -466,7 +466,7 @@ App._saveInboxNextAction = function() {
   }
   App._toast('Pr\u00f3xima a\u00e7\u00e3o salva.', 'success');
   this._renderInboxLayout();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App._addMensagemRapida = function(type) {
@@ -477,7 +477,7 @@ App._addMensagemRapida = function(type) {
   Inbox.addMensagem(id, type, content);
   App._toast('Registrado.', 'success');
   this._renderInboxLayout();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App._linkInboxClient = function(conversaId) {
@@ -499,7 +499,7 @@ App._confirmLinkInboxClient = function(conversaId) {
   App._closeOverlay();
   App._toast('Cliente vinculado.', 'success');
   this._renderInboxLayout();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App._createClientFromInbox = function(conversaId) {
@@ -522,7 +522,7 @@ App._confirmCreateClientFromInbox = function(conversaId) {
   App._closeOverlay();
   App._toast('Cliente criado e vinculado.', 'success');
   this._renderInboxLayout();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App._createLembreteFromInbox = function(conversaId) {
@@ -545,7 +545,7 @@ App._confirmLembreteFromInbox = function(conversaId) {
   App._closeOverlay();
   App._toast('Lembrete criado.', 'success');
   this._renderInboxLayout();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App._closeInboxConversa = function(conversaId) {
@@ -554,6 +554,6 @@ App._closeInboxConversa = function(conversaId) {
     App._toast('Conversa encerrada.', 'info');
     App._selectedConversa = null;
     App._renderInboxLayout();
-    App.refreshHoje();
+    EventBus.emit('meudia.updated');
   });
 };

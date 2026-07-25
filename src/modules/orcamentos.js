@@ -93,7 +93,7 @@ App._confirmNewOrcamento = function() {
   App._closeOverlay();
   App._toast('Or\u00e7amento #' + o.numero + ' criado.', 'success');
   this._renderOrcList();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App._viewOrcamento = function(id) {
@@ -133,7 +133,7 @@ App._saveOrcStatus = function(id) {
   App._closeOverlay();
   App._toast('Or\u00e7amento #' + o.numero + ': ' + Orcamento.STATUS_LABELS[newStatus], 'success');
   this._renderOrcList();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App._linkOrcToConversa = function(orcId) {
@@ -180,5 +180,5 @@ App._confirmAgendaFromOrc = function(orcId) {
   App._closeOverlay();
   App._toast('Agendamento criado a partir do or\u00e7amento.', 'success');
   this._renderOrcList();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };

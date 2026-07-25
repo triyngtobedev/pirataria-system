@@ -303,7 +303,7 @@ App.addAppointment = function() {
   Audit.action('create', 'agenda', '', 'Agendamento criado para ' + (Repos.agenda.list().slice(-1)[0] || {}).clientName);
   App._toast('Agendamento criado com sucesso.', 'success');
   this.renderAgenda();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App.editAppointment = function(id) {
@@ -357,7 +357,7 @@ App.updateAppointment = function(id) {
   Audit.action('update', 'agenda', id, 'Agendamento atualizado');
   App._toast('Agendamento atualizado.', 'success');
   this.renderAgenda();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App.confirmAppointment = function(id) {
@@ -365,7 +365,7 @@ App.confirmAppointment = function(id) {
   Audit.action('update', 'agenda', id, 'Agendamento confirmado');
   App._toast('Agendamento confirmado.', 'success');
   this.renderAgenda();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App.completeAppointment = function(id) {
@@ -428,7 +428,7 @@ App.doComplete = function(id) {
   App._checkPacoteEUsar(a.clientId, a.service, id, a.professional, function() {
     if (a) App._promptGerarOS({ id: id, type: 'agenda_complete', clientName: a.clientName, service: a.service, professional: a.professional, value: compValue, notes: compNotes });
     self.renderAgenda();
-    App.refreshHoje();
+    EventBus.emit('meudia.updated');
   });
   if (!a) { this.renderAgenda(); return; }
 };
@@ -439,7 +439,7 @@ App.deleteAppointment = function(id) {
     Audit.action('delete', 'agenda', id, 'Agendamento removido');
     App._toast('Agendamento removido.', 'success');
     App.renderAgenda();
-    App.refreshHoje();
+    EventBus.emit('meudia.updated');
   });
 };
 

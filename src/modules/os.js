@@ -121,7 +121,7 @@ App._cancelOS = function(id) {
     Audit.action('cancel', 'os', id, 'OS #' + (DB.getOrdemServico(id) || {}).osNumber + ' cancelada');
     App._closeOverlay();
     App.renderOS();
-    App.refreshHoje();
+    EventBus.emit('meudia.updated');
   });
 };
 
@@ -165,7 +165,7 @@ App._confirmGerarOS = function(refId, type, btn) {
   Audit.action('create', 'os', refId, 'OS gerada para ' + clientName);
   App._closeOverlay();
   App._toast('Ordem de Serviço gerada com sucesso!', 'success');
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
   if (App.currentModule === 'atendimento') App.renderAtendimento();
 };
 

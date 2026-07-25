@@ -358,7 +358,7 @@ App.saveCRMFromPanel = function() {
   App._toast('CRM atualizado.', 'success');
   this.openClientPanel(id);
   this.renderClientes();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App.clearCRMNextAction = function() {
@@ -368,7 +368,7 @@ App.clearCRMNextAction = function() {
   App._toast('Pr\u00f3xima a\u00e7\u00e3o limpa.', 'success');
   this.openClientPanel(id);
   this.renderClientes();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App._renderPlanosSection = function(id, c) {
@@ -398,7 +398,7 @@ App._renderPlanosSection = function(id, c) {
       var eStatusLabel = e.status === 'concluida' ? '\u2713' : e.status === 'ignorada' ? '\u2717' : '\u25CB';
       var eBtn = '';
       if (e.status === 'pendente') {
-        eBtn = '<button class="btn btn-sm" style="font-size:0.65rem;padding:2px 6px;" onclick="PosAtendimento.concluirEtapa(\'' + e.id + '\',\'\');App.openClientPanel(\'' + id + '\');App.refreshHoje();">Concluir</button>';
+        eBtn = '<button class="btn btn-sm" style="font-size:0.65rem;padding:2px 6px;" onclick="PosAtendimento.concluirEtapa(\'' + e.id + '\',\'\');App.openClientPanel(\'' + id + '\');EventBus.emit('meudia.updated');">Concluir</button>';
       }
       var atrasada = e.status === 'pendente' && e.dataPrevista && e.dataPrevista < DB._today() ? ' style="color:var(--accent-hover);"' : '';
       html += '<div class="flex-between" style="padding:4px 0;font-size:0.78rem;border-bottom:1px solid var(--border-light);"' + atrasada + '>' +

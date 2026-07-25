@@ -82,7 +82,7 @@ App._openCashier = function() {
   if (cx) Audit.action('create', 'financeiro', cx.id, 'Caixa aberto por ' + operator);
   App._toast('Caixa aberto.', 'success');
   this.renderFinanceiro();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App._showCloseCashier = function() {
@@ -116,7 +116,7 @@ App._doCloseCashier = function() {
   Audit.action('update', 'financeiro', cashier.id, 'Caixa fechado. Diferença: R$ ' + diff.toFixed(2).replace('.', ','));
   App._toast('Caixa fechado. Diferença: R$ ' + diff.toFixed(2).replace('.', ','), diff === 0 ? 'success' : 'warning');
   this.renderFinanceiro();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App._renderFinLancamentos = function(el) {
@@ -160,7 +160,7 @@ App._addManualEntry = function(type) {
   this._closeOverlay();
   App._toast((type === 'entrada' ? 'Receita' : 'Despesa') + ' registrada.', 'success');
   this.renderFinanceiro();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App._renderFinPagamentos = function(el) {

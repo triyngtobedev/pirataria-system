@@ -81,14 +81,14 @@ App._enviarConfirmacao = function(itemId, mensagem) {
   if (item.clientId) Confirmacao.marcarConfirmado(item.appointmentId);
   App._toast('Mensagem de confirma\u00e7\u00e3o registrada.', 'success');
   this._renderConf();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 App._marcarConfirmado = function(appointmentId) {
   Confirmacao.marcarConfirmado(appointmentId);
   App._toast('Agendamento marcado como confirmado.', 'success');
   this._renderConf();
-  App.refreshHoje();
+  EventBus.emit('meudia.updated');
 };
 
 // Add to Confirmacao utility

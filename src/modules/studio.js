@@ -385,7 +385,7 @@ App._syncWppMessages = function() {
   WhatsApp.syncMessages().then(function(count) {
     App._toast(count + ' conversa' + (count !== 1 ? 's' : '') + ' importada' + (count !== 1 ? 's' : '') + '.', 'success');
     App.renderStudio();
-    App.refreshHoje();
+    EventBus.emit('meudia.updated');
   }).catch(function(err) {
     App._toast('Erro na sincroniza\u00e7\u00e3o.', 'error');
   });

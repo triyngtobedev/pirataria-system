@@ -15,6 +15,7 @@ const ASSETS = [
   '/src/utils/dom.js',
   '/src/utils/toast.js',
   '/src/utils/events.js',
+  '/src/utils/event_bus.js',
   '/src/utils/finance.js',
   '/src/utils/permissions.js',
   '/src/utils/auth.js',
