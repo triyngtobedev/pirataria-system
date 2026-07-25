@@ -42,6 +42,8 @@ const ASSETS = [
   '/src/utils/aihub.js',
   '/src/utils/oportunidade.js',
   '/src/utils/fila.js',
+  '/src/utils/priorizacao.js',
+  '/src/utils/recomendacoes.js',
   '/src/utils/onboarding.js',
   '/src/modules/onboarding.js',
   '/src/utils/comunicacao.js',

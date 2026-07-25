@@ -76,6 +76,26 @@ App._renderHojeAtual = function() {
         '</div>' +
       '</div>' +
 
+      // Recomendações da IA
+      (function() {
+        var recs = Recomendacoes.collect();
+        if (recs.length === 0) return '';
+        return '<div class="hj-bloco">' +
+          C.sectionHeader('Recomenda\u00e7\u00f5es da IA', '<span class="hj-contador">' + recs.length + '</span>') +
+          '<div class="hj-card-list">' +
+          recs.slice(0, 4).map(function(r) {
+            var scoreCls = r.score >= 85 ? 'hj-card-urg' : r.score >= 65 ? 'hj-card-warn' : '';
+            return '<div class="hj-card ' + scoreCls + '"><div class="hj-card-main"><div class="hj-card-avatar" style="font-size:0.9rem;background:var(--accent-dim);color:var(--accent-hover);">AI</div><div class="hj-card-body"><div class="hj-card-title">' +
+              App._esc(r.titulo) + ' <span style="font-size:0.6rem;color:var(--text-dim);">Score ' + r.score + '</span></div>' +
+              '<div class="hj-card-desc">' + App._esc(r.motivo) + '</div>' +
+              '<div style="font-size:0.68rem;color:var(--gold);margin-top:2px;">' + App._esc(r.impacto) + '</div></div>' +
+              '<div class="hj-card-actions"><button class="btn btn-primary btn-sm hj-card-btn" onclick="' + r.acaoFn + '">' + App._esc(r.acaoLabel) + '</button></div></div></div>';
+          }).join('') +
+          '</div>' +
+          (recs.length > 4 ? '<div class="hj-mais" onclick="App.navigate(\'aihub\')">Ver todas (+' + (recs.length - 4) + ')</div>' : '') +
+        '</div>';
+      })() +
+
       // Google Calendar alert
       (gcAlerta ? '<div class="hj-notif-resumo hj-notif-critico" onclick="App.navigate(\'studio\')" style="cursor:pointer;margin-bottom:12px;"><span class="hj-notif-icon">&#128197;</span><span class="hj-notif-text"><strong>' + gcAlerta + '</strong></span><span class="hj-notif-btn">Configurar</span></div>' : '') +
 
