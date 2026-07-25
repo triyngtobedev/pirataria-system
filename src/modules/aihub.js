@@ -19,7 +19,8 @@ App._renderAI = function() {
       '<button class="btn btn-sm ' + (this._aiTab === 'todos' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'todos\')">Todos</button>' +
       '<button class="btn btn-sm ' + (this._aiTab === 'historico' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'historico\')">Hist\u00f3rico</button>' +
       '<button class="btn btn-sm ' + (this._aiTab === 'timeline' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'timeline\')">Timeline</button>' +
-      '<button class="btn btn-sm ' + (this._aiTab === 'memoria' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'memoria\')">Mem\u00f3ria</button>'
+      '<button class="btn btn-sm ' + (this._aiTab === 'memoria' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'memoria\')">Mem\u00f3ria</button>' +
+      '<button class="btn btn-sm ' + (this._aiTab === 'playbooks' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'playbooks\')">Playbooks</button>'
     ) +
     L.metrics([
       { value: score, label: 'Score operacional', cls: scoreCls },
@@ -45,6 +46,7 @@ App._renderAITab = function(insights) {
   else if (this._aiTab === 'historico') { this._renderAIHistorico(el); return; }
   else if (this._aiTab === 'timeline') { this._renderAITimeline(el); return; }
   else if (this._aiTab === 'memoria') { this._renderAIMemoria(el); return; }
+  else if (this._aiTab === 'playbooks') { this._renderAPlaybooks(el); return; }
   else filtrados = insights;
 
   if (filtrados.length === 0) {
@@ -172,5 +174,38 @@ App._renderAIMemoria = function(el) {
     html += '</div></div>';
   }
 
-  el.innerHTML = html + '<div style="margin-top:16px;"><button class="btn btn-sm btn-danger" onclick="MemoriaOperacional.reset();App._renderAIMemoria(document.getElementById(\'aiContent\'))">Resetar mem\u00f3ria</button></div>';
+  el.innerHTML = html + '<div style="margin-top:16px;"><button class="btn btn-sm btn-danger" onclick="MemoriaOperacional.reset();App._renderAIMemoria(document.getElementById('aiContent'))">Resetar mem\u00f3ria</button></div>';
+};
+
+App._renderAPlaybooks = function(el) {
+  var playbooks = Playbook.gerar();
+  if (playbooks.length === 0) {
+    el.innerHTML = L.empty('Nenhum playbook dispon\u00edvel', 'Playbooks s\u00e3o gerados automaticamente com base na Mem\u00f3ria Operacional.', 'file');
+    return;
+  }
+
+  var html = L.metrics([
+    { value: playbooks.length, label: 'Playbooks ativos' },
+    { value: playbooks.filter(function(p) { return p.confianca >= 80; }).length, label: 'Alta confian\u00e7a', cls: 'rp-card-green' },
+    { value: playbooks.reduce(function(s, p) { return s + p.clientes; }, 0), label: 'Clientes afetados' }
+  ]);
+
+  html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+  playbooks.forEach(function(pb) {
+    var cls = pb.confianca >= 80 ? 'rp-card-green' : pb.confianca >= 65 ? 'rp-card-yellow' : '';
+    var onClick = "Executor.executar('" + pb.tipo + "', " + JSON.stringify(pb.payload || {}).replace(/'/g, "\\'") + ")";
+    html += '<div class="rp-card ' + cls + '" style="text-align:left;">' +
+      '<div class="flex-between"><span><strong>' + App._esc(pb.titulo) + '</strong></span><span class="badge ' + (pb.confianca >= 80 ? 'badge-completed' : pb.confianca >= 65 ? 'badge-scheduled' : 'badge-waiting') + '">' + pb.confianca + '% confian\u00e7a</span></div>' +
+      '<div style="font-size:0.78rem;color:var(--text-muted);margin:4px 0;">' + App._esc(pb.objetivo) + '</div>' +
+      '<div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:6px;"><strong>Por que:</strong> ' + App._esc(pb.motivo) + '</div>' +
+      '<div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:6px;"><strong>Impacto:</strong> ' + App._esc(pb.impacto) + ' | <strong>Clientes:</strong> ' + pb.clientes + '</div>' +
+      (pb.clientesLista && pb.clientesLista.length > 0 ? '<div style="font-size:0.68rem;color:var(--text-dim);margin-bottom:6px;"><strong>Clientes:</strong> ' + pb.clientesLista.map(function(cl) { return App._esc(cl.name); }).join(', ') + '</div>' : '') +
+      '<div style="display:flex;gap:4px;flex-wrap:wrap;">' +
+        pb.passos.map(function(p) { return '<span class="badge badge-scheduled" style="font-size:0.55rem;">' + App._esc(p) + '</span>'; }).join('') +
+      '</div>' +
+      '<div style="margin-top:8px;"><button class="btn btn-primary btn-sm" onclick="' + onClick + '">' + App._esc(pb.acao) + '</button></div>' +
+    '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
 };
