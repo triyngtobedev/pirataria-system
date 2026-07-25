@@ -236,6 +236,41 @@ App._renderConversaDetail = function(c) {
 
     assistenteHtml +
 
+    // Modo Operação Assistida
+    (function() {
+      if (isEncerrada) return '';
+      var draftAtual = Inbox.getDraft(c.id);
+      var sugestao = Inbox.sugerirResposta(c.id);
+      var temDraft = !!draftAtual;
+      var temSugestao = !!sugestao && !temDraft;
+
+      // Se tem sugestão e não tem draft, criar draft automaticamente
+      if (temSugestao) {
+        Inbox.setDraft(c.id, sugestao);
+        Inbox.logSugestao(c.id, 'sugerida', sugestao);
+        draftAtual = sugestao;
+        temDraft = true;
+      }
+
+      if (!temDraft) return '';
+
+      var statusLabel = c.draftStatus === 'enviada' ? 'Enviada' : c.draftStatus === 'descartada' ? 'Descartada' : 'Rascunho';
+      var statusCls = c.draftStatus === 'enviada' ? 'badge-completed' : c.draftStatus === 'descartada' ? 'badge-cancelled' : 'badge-progress';
+
+      return '<div class="inb-section" style="background:var(--surface);border:2px solid var(--color-accent);border-radius:var(--radius-md);padding:12px;margin-bottom:16px;">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+          '<span style="font-size:0.82rem;font-weight:500;">\uD83E\uDD16 Assistente \u2014 Resposta sugerida</span>' +
+          '<span class="badge ' + statusCls + '" style="font-size:0.6rem;">' + statusLabel + '</span>' +
+        '</div>' +
+        '<textarea id="assistedDraftText" rows="3" style="width:100%;background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:8px 10px;color:var(--color-text);font-size:var(--font-size-md);font-family:var(--font);resize:vertical;">' + App._esc(draftAtual) + '</textarea>' +
+        '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">' +
+          '<button class="btn btn-primary btn-sm" onclick="App._sendAssistedDraft(\'' + c.id + '\')">Enviar</button>' +
+          '<button class="btn btn-sm" onclick="App._editAssistedDraft(\'' + c.id + '\')">Editar</button>' +
+          '<button class="btn btn-sm" onclick="App._discardAssistedDraft(\'' + c.id + '\')">Descartar</button>' +
+        '</div>' +
+      '</div>';
+    })() +
+
     // Timeline do fluxo de agendamento
     (AgendamentoAssistente.getEstadoFluxo(c.id) > 0
       ? '<div class="inb-section" style="background:var(--surface-2);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:10px 12px;margin-bottom:16px;">' +
@@ -285,6 +320,48 @@ App._renderConversaDetail = function(c) {
       '</div>' +
     '</div>' +
   '</div>';
+};
+
+// ─── Modo Operação Assistida ───
+App._sendAssistedDraft = function(conversaId) {
+  var texto = document.getElementById('assistedDraftText');
+  if (!texto || !texto.value.trim()) { App._toast('Texto vazio.', 'warning'); return; }
+  var msg = texto.value.trim();
+  Inbox.addMensagem(conversaId, 'enviada', msg);
+  Inbox.clearDraft(conversaId);
+  Inbox.logSugestao(conversaId, 'enviada', msg);
+  // Enviar via WhatsApp se configurado
+  var wppStatus = WhatsApp.getStatus();
+  if (wppStatus.configured && wppStatus.connected) {
+    WhatsApp.sendFromInbox(conversaId, msg).then(function() {
+      App._toast('Resposta enviada pelo WhatsApp.', 'success');
+      App._renderInboxLayout();
+      App.refreshHoje();
+    }).catch(function(err) {
+      App._toast('Registrada, mas falha ao enviar WhatsApp.', 'warning');
+      App._renderInboxLayout();
+    });
+  } else {
+    App._toast('Resposta registrada.', 'success');
+    this._renderInboxLayout();
+    App.refreshHoje();
+  }
+};
+
+App._editAssistedDraft = function(conversaId) {
+  var texto = document.getElementById('assistedDraftText');
+  if (!texto) return;
+  Inbox.setDraft(conversaId, texto.value);
+  Inbox.logSugestao(conversaId, 'editada', texto.value);
+  App._toast('Rascunho atualizado.', 'success');
+};
+
+App._discardAssistedDraft = function(conversaId) {
+  Inbox.clearDraft(conversaId);
+  Inbox.logSugestao(conversaId, 'descartada', '');
+  App._toast('Sugest\u00e3o descartada.', 'info');
+  this._renderInboxLayout();
+  App.refreshHoje();
 };
 
 App._agendarPeloAssistente = function(conversaId, horario, data) {

@@ -292,6 +292,86 @@ const Inbox = {
     return results;
   },
 
+  // ─── Modo Operação Assistida ───
+  // Rascunho de resposta (armazenado na conversa via note)
+  setDraft: function(conversaId, texto) {
+    DB.updateConversa(conversaId, { draftResposta: texto, draftStatus: 'rascunho', draftCriadoEm: DB._now() });
+  },
+
+  getDraft: function(conversaId) {
+    var c = DB.getConversa(conversaId);
+    return c ? (c.draftResposta || '') : '';
+  },
+
+  clearDraft: function(conversaId) {
+    DB.updateConversa(conversaId, { draftResposta: '', draftStatus: null, draftCriadoEm: null });
+  },
+
+  // Sugerir resposta automaticamente baseada no contexto
+  sugerirResposta: function(conversaId) {
+    var c = DB.getConversa(conversaId);
+    if (!c) return '';
+    var msgs = DB.getMensagens(conversaId);
+
+    // Última mensagem recebida
+    var ultimaMsg = '';
+    for (var i = msgs.length - 1; i >= 0; i--) {
+      if (msgs[i].type === 'recebida' || msgs[i].type === 'resposta') {
+        ultimaMsg = msgs[i].content;
+        break;
+      }
+    }
+
+    if (!ultimaMsg) return '';
+
+    // Regras de sugestão baseadas no conteúdo
+    var txt = ultimaMsg.toLowerCase();
+    var settings = Repos.studio.settings.get();
+    var studioName = (settings && settings.studioName) || 'Pirataria Body Art';
+
+    // Orçamento
+    if (txt.indexOf('pre\u00e7o') >= 0 || txt.indexOf('valor') >= 0 || txt.indexOf('quanto') >= 0 || txt.indexOf('custa') >= 0) {
+      var sugestao = 'Vou te passar os valores! Podemos marcar um hor\u00e1rio para avaliarmos pessoalmente? Ou prefere que envie os valores por aqui?';
+      return sugestao;
+    }
+
+    // Agendamento
+    if (txt.indexOf('agendar') >= 0 || txt.indexOf('hor\u00e1rio') >= 0 || txt.indexOf('marcar') >= 0 || txt.indexOf('quero ir') >= 0) {
+      var hoje = DB._today();
+      var horarios = AgendamentoAssistente.getHorariosDisponiveis(hoje, '');
+      if (horarios.length > 0) {
+        var lista = horarios.slice(0, 5).map(function(h) { return h.hora; }).join(', ');
+        return 'Temos hor\u00e1rios dispon\u00edveis hoje: ' + lista + '. Qual funciona melhor para voc\u00ea?';
+      }
+      return 'Podemos agendar seu hor\u00e1rio! Quais dias e hor\u00e1rios funcionam melhor para voc\u00ea?';
+    }
+
+    // Confirmação
+    if (txt.indexOf('confirm') >= 0 || txt.indexOf('pode ser') >= 0) {
+      return 'Perfeito! Confirmado. Aguardamos voc\u00ea no ' + studioName + '. Qualquer d\u00favida, estamos \u00e0 disposi\u00e7\u00e3o.';
+    }
+
+    // Dúvida genérica
+    if (txt.indexOf('d\u00favida') >= 0 || txt.indexOf('como funciona') >= 0 || txt.indexOf('pode') >= 0) {
+      return 'Claro! Vou ajudar com suas d\u00favidas. Pode me falar mais sobre o que voc\u00ea precisa?';
+    }
+
+    // Saudação
+    if (txt.indexOf('ol\u00e1') >= 0 || txt.indexOf('oi') >= 0 || txt.indexOf('bom dia') >= 0 || txt.indexOf('boa tarde') >= 0 || txt.indexOf('boa noite') >= 0) {
+      return 'Ol\u00e1, ' + c.clientName + '! Tudo bem? Aqui \u00e9 do ' + studioName + '. Como posso ajudar?';
+    }
+
+    // Fallback
+    return 'Ol\u00e1, ' + c.clientName + '! Recebi sua mensagem. Vou verificar e j\u00e1 te respondo.';
+  },
+
+  // Registrar ação no CRM
+  logSugestao: function(conversaId, tipo, conteudo) {
+    var c = DB.getConversa(conversaId);
+    if (!c || !c.clientId) return;
+    CRM.addTimeline(c.clientId, 'assistente_' + tipo, 'Assistente: ' + tipo + ' — ' + (conteudo || '').substring(0, 80), conversaId);
+  },
+
   collectHoje() {
     var today = DB._today();
     var conversas = DB.getConversas();
