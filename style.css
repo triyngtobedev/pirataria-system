@@ -1232,6 +1232,44 @@ input.has-error, select.has-error, textarea.has-error { border-color: var(--colo
 .dio-busca-wrap { margin-bottom:8px; }
 .dio-export { padding:8px 0; }
 
+/* ─── Gargalos Operacionais ─── */
+.gar-wrap { display:flex; flex-direction:column; gap:12px; }
+.gar-metrics { display:flex; flex-wrap:wrap; gap:6px; }
+.gar-card { flex:1; min-width:80px; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); display:flex; flex-direction:column; gap:2px; }
+.gar-card-val { font-size:1.1rem; font-weight:700; }
+.gar-card-lbl { font-size:0.62rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); }
+.gar-card-red { border-left:3px solid #dc2626; }
+.gar-card-orange { border-left:3px solid #f59e0b; }
+.gar-card-blue { border-left:3px solid #3b82f6; }
+.gar-card-green { border-left:3px solid #16a34a; }
+.gar-aba { display:flex; gap:4px; flex-wrap:wrap; }
+.gar-lista { display:flex; flex-direction:column; gap:8px; }
+.gar-card-gargalo { padding:14px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); display:flex; flex-direction:column; gap:8px; }
+.gar-card-gargalo:hover { border-color:var(--accent-dim); }
+.gar-resolvido { opacity:0.5; }
+.gar-card-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.gar-prio { font-size:0.6rem; padding:2px 8px; border-radius:3px; font-weight:600; text-transform:uppercase; }
+.gar-prio-critico { background:#dc262620; color:#dc2626; }
+.gar-prio-alto { background:#f59e0b20; color:#f59e0b; }
+.gar-prio-medio { background:#3b82f620; color:#3b82f6; }
+.gar-prio-baixo { background:#6b728020; color:#6b7280; }
+.gar-titulo { flex:1; font-size:0.9rem; }
+.gar-score { font-size:0.65rem; padding:2px 8px; border-radius:8px; font-weight:700; }
+.gar-score-critico { background:#dc262620; color:#dc2626; }
+.gar-score-alto { background:#f59e0b20; color:#f59e0b; }
+.gar-score-medio { background:#3b82f620; color:#3b82f6; }
+.gar-desc { font-size:0.78rem; color:var(--text-muted); }
+.gar-detalhes { display:flex; flex-direction:column; gap:3px; font-size:0.74rem; }
+.gar-det { line-height:1.4; }
+.gar-det-label { color:var(--text-dim); font-weight:600; }
+.gar-actions { display:flex; gap:4px; margin-top:4px; }
+.gar-section { display:flex; flex-direction:column; gap:6px; }
+.gar-section-title { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-muted); border-bottom:1px solid var(--border-light); padding-bottom:6px; }
+.gar-tabela-wrap { overflow-x:auto; }
+.gar-tabela { width:100%; border-collapse:collapse; font-size:0.78rem; }
+.gar-tabela th { text-align:left; padding:6px; border-bottom:2px solid var(--border); font-size:0.63rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); white-space:nowrap; }
+.gar-tabela td { padding:6px; border-bottom:1px solid var(--border-light); }
+
 /* ─── Pendências (Central de Pendências) ─── */
 .pen-wrap { display:flex; flex-direction:column; gap:12px; }
 .pen-contadores { display:flex; flex-wrap:wrap; gap:4px; padding:8px 0; }
