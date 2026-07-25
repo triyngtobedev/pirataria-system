@@ -1270,6 +1270,36 @@ input.has-error, select.has-error, textarea.has-error { border-color: var(--colo
 .gar-tabela th { text-align:left; padding:6px; border-bottom:2px solid var(--border); font-size:0.63rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); white-space:nowrap; }
 .gar-tabela td { padding:6px; border-bottom:1px solid var(--border-light); }
 
+/* ─── Ações Prioritárias ─── */
+.ap-wrap { display:flex; flex-direction:column; gap:12px; }
+.ap-metrics { display:flex; flex-wrap:wrap; gap:6px; }
+.ap-card { flex:1; min-width:80px; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); display:flex; flex-direction:column; gap:2px; }
+.ap-card-val { font-size:1.1rem; font-weight:700; }
+.ap-card-lbl { font-size:0.62rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); }
+.ap-card-red { border-left:3px solid #dc2626; }
+.ap-card-orange { border-left:3px solid #f59e0b; }
+.ap-card-blue { border-left:3px solid #3b82f6; }
+.ap-card-purple { border-left:3px solid #8b5cf6; }
+.ap-filtros { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.ap-busca { flex:1; min-width:180px; }
+.ap-controles { display:flex; gap:4px; flex-wrap:wrap; }
+.ap-lista { display:flex; flex-direction:column; gap:8px; }
+.ap-item { padding:14px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); display:flex; flex-direction:column; gap:6px; }
+.ap-item:hover { border-color:var(--accent-dim); }
+.ap-item-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.ap-prio { font-size:0.55rem; padding:2px 7px; border-radius:3px; font-weight:600; text-transform:uppercase; white-space:nowrap; }
+.ap-prio-critico { background:#dc262620; color:#dc2626; }
+.ap-prio-alto { background:#f59e0b20; color:#f59e0b; }
+.ap-prio-medio { background:#3b82f620; color:#3b82f6; }
+.ap-prio-baixo { background:#6b728020; color:#6b7280; }
+.ap-titulo { flex:1; font-size:0.85rem; }
+.ap-motivo { font-size:0.75rem; color:var(--text-muted); }
+.ap-detalhes { display:flex; flex-wrap:wrap; gap:4px 14px; font-size:0.7rem; }
+.ap-det { color:var(--text-dim); }
+.ap-det-label { font-weight:600; color:var(--text-muted); }
+.ap-rec { font-size:0.75rem; background:var(--accent-dim); padding:6px 10px; border-radius:var(--radius-sm); color:var(--accent); }
+.ap-actions { display:flex; gap:4px; margin-top:2px; }
+
 /* ─── Pendências (Central de Pendências) ─── */
 .pen-wrap { display:flex; flex-direction:column; gap:12px; }
 .pen-contadores { display:flex; flex-wrap:wrap; gap:4px; padding:8px 0; }
