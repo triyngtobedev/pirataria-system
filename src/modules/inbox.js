@@ -74,23 +74,35 @@ App._usarRespostaRapida = function(conversaId, texto) {
 };
 
 App._renderConversaItem = function(c, selected) {
+  // Usar WhatsApp collect se disponível para dados mais ricos
+  var w = null;
+  if (typeof Inbox.collectWhatsApp === 'function') {
+    var wList = Inbox.collectWhatsApp();
+    for (var i = 0; i < wList.length; i++) { if (wList[i].id === c.id) { w = wList[i]; break; } }
+  }
+
   var selCls = selected ? ' inb-item-selected' : '';
   var prioMap = { high: 'inb-high', medium: 'inb-medium', low: 'inb-low' };
   var prioCls = prioMap[c.priority] || '';
-  var statusLabel = Inbox.STATUS_LABELS[c.status] || c.status;
-  var statusCls = c.status === 'encerrada' ? 'inb-closed' : c.status === 'aguardando_estudio' ? 'inb-waiting-studio' : '';
-  var origemLabel = Inbox.ORIGEM_LABELS[c.origin] || c.origin;
-  var ultima = c.ultimaInteracao ? c.ultimaInteracao.slice(11, 16) + ' ' + c.ultimaInteracao.slice(0, 10) : '—';
-  var hasClient = c.clientId ? '\u2713' : '';
 
-  return '<div class="inb-item' + selCls + ' ' + statusCls + '" onclick="App._selectConversa(\'' + c.id + '\')">' +
+  var motivo = w ? w.motivoLabel : '';
+  var tempoLabel = w ? w.tempoLabel : (c.ultimaInteracao ? c.ultimaInteracao.slice(11, 16) + ' ' + c.ultimaInteracao.slice(0, 10) : '—');
+  var quemEnviou = w ? (w.ultimaMsgTipo === 'cliente' ? '\u2190 Cliente' : '\u2192 Est\u00fadio') : '';
+  var urgCls = w && w.prioridade <= 1 ? ' inb-waiting-studio' : (c.status === 'encerrada' ? ' inb-closed' : '');
+  var statusLabel = Inbox.STATUS_LABELS[c.status] || c.status;
+
+  return '<div class="inb-item' + selCls + urgCls + '" onclick="App._selectConversa(\'' + c.id + '\')">' +
     '<div class="inb-item-top">' +
       '<span class="inb-item-name">' + this._esc(c.clientName) + '</span>' +
-      '<span class="inb-item-time">' + ultima + '</span>' +
-      hasClient ? '<span class="inb-item-linked" title="Vinculado a cliente">' + hasClient + '</span>' : '' +
+      (c.clientId ? '<span class="inb-item-linked" title="Vinculado">\u2713</span>' : '') +
+      '<span class="inb-item-time">' + tempoLabel + '</span>' +
+    '</div>' +
+    '<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:2px;">' +
+      (motivo ? '<span class="badge badge-scheduled" style="font-size:0.55rem;">' + motivo + '</span> ' : '') +
+      quemEnviou +
     '</div>' +
     '<div class="inb-item-bottom">' +
-      '<span class="inb-item-origin">' + origemLabel + '</span>' +
+      '<span class="inb-item-origin">' + (Inbox.ORIGEM_LABELS[c.origin] || c.origin) + '</span>' +
       '<span class="inb-item-priority ' + prioCls + '">' + (c.priority === 'high' ? 'Alta' : c.priority === 'low' ? 'Baixa' : 'M\u00e9dia') + '</span>' +
       '<span class="inb-item-status">' + statusLabel + '</span>' +
     '</div>' +

@@ -209,6 +209,37 @@ const AIHub = {
 
   // ─── Coletores públicos ───
 
+  _analiseWhatsApp: function() {
+    var insights = [];
+    var wpp = typeof Inbox.collectWhatsApp === 'function' ? Inbox.collectWhatsApp() : [];
+    if (wpp.length === 0) return insights;
+
+    // Quem responder primeiro
+    if (wpp.length > 0) {
+      insights.push(AIHub._make('alerta', 'whatsapp', 0, wpp[0].clientName + ' — ' + wpp[0].motivoLabel, wpp[0].statusLabel + ' | ' + wpp[0].tempoLabel + ' | ' + wpp[0].nextAction, 'inbox', wpp[0].id, 'Responder', 'navigate', 'inbox'));
+    }
+
+    // Conversa com maior risco de perda (mais tempo sem resposta + prioridade)
+    var maiorRisco = wpp.filter(function(i) { return i.status === 'aguardando_estudio'; }).sort(function(a, b) { return (b.tempoDesdeUltima || 0) - (a.tempoDesdeUltima || 0); });
+    if (maiorRisco.length > 0 && maiorRisco[0].tempoDesdeUltima > 120) {
+      insights.push(AIHub._make('alerta', 'whatsapp', 1, 'Risco de perda: ' + maiorRisco[0].clientName, 'Cliente aguarda h\u00e1 ' + maiorRisco[0].tempoLabel + '. Priorizar resposta.', 'inbox', maiorRisco[0].id, 'Responder', 'navigate', 'inbox'));
+    }
+
+    // Conversa com maior chance de conversão (motivo agendamento/orçamento)
+    var maiorChance = wpp.filter(function(i) { return i.motivo === 'agendamento' || i.motivo === 'orcamento'; });
+    if (maiorChance.length > 0) {
+      insights.push(AIHub._make('oportunidade', 'whatsapp', 2, maiorChance[0].clientName + ' — ' + maiorChance[0].motivoLabel, 'Cliente com inten\u00e7\u00e3o de ' + maiorChance[0].motivoLabel.toLowerCase() + '. Priorizar atendimento.', 'inbox', maiorChance[0].id, 'Atender', 'navigate', 'inbox'));
+    }
+
+    // Acima do tempo ideal (>2h sem resposta)
+    var acimaDoIdeal = wpp.filter(function(i) { return i.status === 'aguardando_estudio' && i.tempoDesdeUltima !== null && i.tempoDesdeUltima > 120; }).length;
+    if (acimaDoIdeal > 0) {
+      insights.push(AIHub._make('alerta', 'whatsapp', 2, acimaDoIdeal + ' conversa' + (acimaDoIdeal !== 1 ? 's' : '') + ' acima do tempo ideal', 'Tempo de resposta superior a 2h.', 'inbox', null, 'Ver conversas', 'navigate', 'inbox'));
+    }
+
+    return insights;
+  },
+
   _analiseInstagram: function() {
     var insights = [];
     var ig = Marketing.getResumoInstagram();
@@ -328,6 +359,7 @@ const AIHub = {
   collect: function() {
     return [].concat(
       this._analiseOnboarding(),
+      this._analiseWhatsApp(),
       this._analiseInstagram(),
       this._analiseAgendamento(),
       this._analiseConfirmacao(),

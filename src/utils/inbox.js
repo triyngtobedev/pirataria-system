@@ -205,6 +205,93 @@ const Inbox = {
     };
   },
 
+  classificarMotivo: function(conversaId) {
+    var c = DB.getConversa(conversaId);
+    if (!c) return 'duvida';
+    var msgs = DB.getMensagens(conversaId);
+
+    // Verificar orçamentos vinculados
+    if (c.clientId) {
+      var orcs = DB.getOrcamentos().filter(function(o) { return o.clientId === c.clientId && o.status !== 'rascunho' && o.status !== 'recusado' && o.status !== 'expirado'; });
+      if (orcs.length > 0) return 'orcamento';
+    }
+
+    // Verificar planos de acompanhamento
+    if (c.clientId) {
+      var planos = DB.getPlanosByClient(c.clientId).filter(function(p) { return p.status === 'ativo'; });
+      if (planos.length > 0) return 'pos_atendimento';
+    }
+
+    // Analisar mensagens recentes
+    for (var i = msgs.length - 1; i >= 0; i--) {
+      var m = msgs[i];
+      if (m.type !== 'recebida' && m.type !== 'resposta') continue;
+      var txt = (m.content || '').toLowerCase();
+      if (txt.indexOf('pre\u00e7o') >= 0 || txt.indexOf('valor') >= 0 || txt.indexOf('quanto') >= 0 || txt.indexOf('or\u00e7amento') >= 0) return 'orcamento';
+      if (txt.indexOf('agendar') >= 0 || txt.indexOf('hor\u00e1rio') >= 0 || txt.indexOf('marcar') >= 0 || txt.indexOf('quero ir') >= 0 || txt.indexOf('vou l\u00e1') >= 0) return 'agendamento';
+    }
+
+    // Verificar se tem agendamento
+    if (c.clientId) {
+      var apps = DB.getAppointments().filter(function(a) { return a.clientId === c.clientId; });
+      if (apps.length > 0) {
+        var ultimo = apps.sort(function(a, b) { return (b.date || '') > (a.date || '') ? 1 : -1; })[0];
+        if (ultimo && ultimo.date >= DB._today()) return 'confirmacao';
+        if (ultimo) return 'pos_atendimento';
+      }
+    }
+
+    return 'duvida';
+  },
+
+  MOTIVO_LABELS: { orcamento: 'Or\u00e7amento', agendamento: 'Agendamento', confirmacao: 'Confirma\u00e7\u00e3o', pos_atendimento: 'P\u00f3s-atendimento', duvida: 'D\u00favida' },
+
+  collectWhatsApp: function() {
+    var hoje = DB._today();
+    var conversas = DB.getConversas().filter(function(c) { return c.status !== 'encerrada'; });
+    var results = [];
+
+    for (var i = 0; i < conversas.length; i++) {
+      var c = conversas[i];
+      var motivo = Inbox.classificarMotivo(c.id);
+      var msgs = DB.getMensagens(c.id);
+      var ultimaMsg = msgs.length > 0 ? msgs[0] : null;
+      var quemEnviou = '';
+      if (ultimaMsg) {
+        quemEnviou = (ultimaMsg.type === 'recebida' || ultimaMsg.type === 'resposta') ? 'cliente' : 'estudio';
+      }
+      var tempoDesdeUltima = c.ultimaInteracao ? Math.floor((Date.now() - new Date(c.ultimaInteracao).getTime()) / 60000) : null;
+
+      // Prioridade: aguardando_estudio > intencao_agendamento > confirmacao > orcamento > vip > tempo
+      var prioridade = 5;
+      if (c.status === 'aguardando_estudio') prioridade = 0;
+      else if (motivo === 'agendamento') prioridade = 1;
+      else if (motivo === 'confirmacao') prioridade = 2;
+      else if (motivo === 'orcamento') prioridade = 3;
+      if (c.priority === 'high' && prioridade > 1) prioridade = 1;
+      if (c.clientId) {
+        var client = DB.getClient(c.clientId);
+        if (client && (client.totalVisits || 0) >= 3 && prioridade > 2) prioridade = 2;
+      }
+      // Tempo sem resposta aumenta urgência
+      if (tempoDesdeUltima !== null && tempoDesdeUltima > 120 && prioridade > 1) prioridade = 1;
+
+      results.push({
+        id: c.id, clientName: c.clientName, clientId: c.clientId, phone: c.phone || '',
+        origem: c.origin || 'whatsapp', motivo: motivo, motivoLabel: Inbox.MOTIVO_LABELS[motivo] || 'D\u00favida',
+        status: c.status, statusLabel: Inbox.STATUS_LABELS[c.status] || c.status,
+        prioridade: prioridade, ultimaMsgTipo: quemEnviou,
+        tempoDesdeUltima: tempoDesdeUltima,
+        tempoLabel: tempoDesdeUltima !== null ? (tempoDesdeUltima < 60 ? tempoDesdeUltima + 'min' : Math.floor(tempoDesdeUltima / 60) + 'h' + (tempoDesdeUltima % 60) + 'min') : '—',
+        ultimaInteracao: c.ultimaInteracao, nextAction: c.nextAction || '',
+        priority: c.priority || 'medium', note: c.note || ''
+      });
+    }
+
+    results.sort(function(a, b) { return a.prioridade - b.prioridade || (a.tempoDesdeUltima || 0) - (b.tempoDesdeUltima || 0); });
+    return results;
+  },
+
   collectHoje() {
     var today = DB._today();
     var conversas = DB.getConversas();
