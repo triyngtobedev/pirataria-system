@@ -209,6 +209,20 @@ const AIHub = {
 
   // ─── Coletores públicos ───
 
+  _analiseOportunidades: function() {
+    var insights = [];
+    var ops = Oportunidade.collect();
+    var criticas = ops.filter(function(o) { return o.score >= 80; });
+    criticas.forEach(function(o) {
+      insights.push(AIHub._make('oportunidade', 'oportunidades', 1, o.clientName + ' — ' + o.categoriaLabel, o.descricao, 'oportunidades', o.id, o.btnLabel || 'Abrir', 'navigate', o.btnTarget || 'oportunidades'));
+    });
+    var total = ops.length;
+    if (total > 0) {
+      insights.push(AIHub._make('info', 'oportunidades', 3, total + ' oportunidade' + (total !== 1 ? 's' : '') + ' dispon\u00edvel' + (total !== 1 ? 'is' : ''), 'Acesse a Central de Oportunidades para visualizar todas.', 'oportunidades', null, 'Abrir', 'navigate', 'oportunidades'));
+    }
+    return insights;
+  },
+
   collect: function() {
     return [].concat(
       this._analiseCRM(),
@@ -219,7 +233,8 @@ const AIHub = {
       this._analiseEstoque(),
       this._analiseConhecimento(),
       this._analiseHoje(),
-      this._analiseInbox()
+      this._analiseInbox(),
+      this._analiseOportunidades()
     );
   },
 

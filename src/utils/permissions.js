@@ -1,7 +1,7 @@
 const Permissions = {
   _rules: {
     admin: {
-      modules: ['hoje', 'inbox', 'orcamentos', 'marketing', 'conhecimento', 'aihub', 'agenda', 'clientes', 'atendimento', 'financeiro', 'estoque', 'relatorios', 'studio', 'os', 'termos', 'lembretes', 'comissoes', 'vales', 'pacotes'],
+      modules: ['hoje', 'inbox', 'orcamentos', 'oportunidades', 'marketing', 'conhecimento', 'aihub', 'agenda', 'clientes', 'atendimento', 'financeiro', 'estoque', 'relatorios', 'studio', 'os', 'termos', 'lembretes', 'comissoes', 'vales', 'pacotes'],
       canManageUsers: true,
       canManageSettings: true,
     },
