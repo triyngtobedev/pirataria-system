@@ -85,11 +85,12 @@ App._renderHojeAtual = function() {
           '<div class="hj-card-list">' +
           recs.slice(0, 4).map(function(r) {
             var scoreCls = r.score >= 85 ? 'hj-card-urg' : r.score >= 65 ? 'hj-card-warn' : '';
+            var onClick = r.tipo ? "Executor.executar('" + r.tipo + "', " + JSON.stringify(r.payload || {}).replace(/'/g, "\\'") + ")" : "App.navigate('aihub')";
             return '<div class="hj-card ' + scoreCls + '"><div class="hj-card-main"><div class="hj-card-avatar" style="font-size:0.9rem;background:var(--accent-dim);color:var(--accent-hover);">AI</div><div class="hj-card-body"><div class="hj-card-title">' +
               App._esc(r.titulo) + ' <span style="font-size:0.6rem;color:var(--text-dim);">Score ' + r.score + '</span></div>' +
               '<div class="hj-card-desc">' + App._esc(r.motivo) + '</div>' +
               '<div style="font-size:0.68rem;color:var(--gold);margin-top:2px;">' + App._esc(r.impacto) + '</div></div>' +
-              '<div class="hj-card-actions"><button class="btn btn-primary btn-sm hj-card-btn" onclick="' + r.acaoFn + '">' + App._esc(r.acaoLabel) + '</button></div></div></div>';
+              '<div class="hj-card-actions"><button class="btn btn-primary btn-sm hj-card-btn" onclick="' + onClick + '">' + App._esc(r.acaoLabel) + '</button></div></div></div>';
           }).join('') +
           '</div>' +
           (recs.length > 4 ? '<div class="hj-mais" onclick="App.navigate(\'aihub\')">Ver todas (+' + (recs.length - 4) + ')</div>' : '') +
@@ -109,18 +110,19 @@ App._renderHojeAtual = function() {
             '<span class="hj-chip ' + (this._hojeTaskFilter === 'pendentes' ? 'hj-chip-active' : '') + '" onclick="App._hojeTaskFilter=\'pendentes\';App._renderHojeAtual();" style="font-size:0.6rem;padding:2px 8px;cursor:pointer;">Pendentes</span>' +
             '<span class="hj-contador">' + tasks.length + '</span>' +
           '</span>') +
-        (tasksFiltradas.length === 0
+          (tasksFiltradas.length === 0
           ? L.empty('Nenhuma tarefa pendente', 'Tudo resolvido por aqui!', 'bell')
           : '<div class="hj-card-list">' + tasksFiltradas.slice(0, 10).map(function(t) {
             var scoreCls = t.score >= 85 ? 'badge-cancelled' : t.score >= 65 ? 'badge-progress' : t.score >= 40 ? 'badge-scheduled' : 'badge-waiting';
             var origemLabels = { confirmacao: '\u2705', whatsapp: '\uD83D\uDCAC', agendamento: '\uD83D\uDCC5', crm: '\uD83D\uDC64', oportunidade: '\u2728', agenda: '\uD83D\uDCCB', financeiro: '\uD83D\uDCB0', posatendimento: '\uD83C\uDFE5', notificacao: '\uD83D\uDD14' };
             var icon = origemLabels[t.origem] || '\u2022';
+            var onClick = t.origem && t.id ? "Executor.executar('" + t.origem + "', {})" : "App.navigate('filas')";
             return '<div class="hj-card" style="cursor:pointer;"><div class="hj-card-main"><div class="hj-card-avatar" style="font-size:1rem;background:transparent;">' + icon + '</div><div class="hj-card-body"><div class="hj-card-title">' +
               App._esc(t.clientName || t.descricao) + ' <span class="badge ' + scoreCls + '" style="font-size:0.55rem;">' + t.prioridadeLabel + '</span> <span style="font-size:0.55rem;color:var(--text-dim);">Score ' + t.score + '</span></div>' +
               '<div class="hj-card-desc">' + App._esc(t.descricao) + (t.horario ? ' \u2022 ' + t.horario : '') + '</div>' +
               (t.motivos && t.motivos.length > 0 ? '<div style="margin-top:3px;display:flex;flex-wrap:wrap;gap:3px;">' + t.motivos.map(function(m) { return '<span class="badge badge-scheduled" style="font-size:0.5rem;padding:1px 4px;">' + App._esc(m) + '</span>'; }).join('') + '</div>' : '') +
               '</div>' +
-              '<div class="hj-card-actions"><button class="btn btn-primary btn-sm hj-card-btn" onclick="' + t.acaoFn + '">' + App._esc(t.acaoLabel) + '</button></div></div></div>';
+              '<div class="hj-card-actions"><button class="btn btn-primary btn-sm hj-card-btn" onclick="' + onClick + '">' + App._esc(t.acaoLabel) + '</button></div></div></div>';
           }).join('') + '</div>') +
         (tasksFiltradas.length > 10 ? '<div class="hj-mais" onclick="App.navigate(\'filas\')">Ver todas (+' + (tasksFiltradas.length - 10) + ')</div>' : '') +
       '</div>' +
