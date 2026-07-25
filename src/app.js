@@ -41,14 +41,18 @@ const App = {
     var el = document.getElementById('versionHash');
     if (!el) return;
     try {
-      var ver = document.querySelector('meta[name="version"]');
-      if (ver) el.textContent = 'v' + (ver.getAttribute('content') || '1.0.0');
+      var meta = document.querySelector('meta[name="version"]');
+      var ver = meta ? meta.getAttribute('content') : null;
+      el.textContent = 'v' + (ver || '1.0.0');
     } catch(e) {}
   },
 
   _showDiagnostics() {
     var ver = '1.0.0';
-    try { var m = document.querySelector('meta[name="version"]'); if (m) ver = m.getAttribute('content') || ver; } catch(e) {}
+    try {
+      var m = document.querySelector('meta[name="version"]');
+      if (m) ver = m.getAttribute('content') || ver;
+    } catch(e) {}
     var swStatus = 'serviceWorker' in navigator ? (navigator.serviceWorker.controller ? 'Ativo' : 'Registrado') : 'N\u00e3o suportado';
     var storage = '';
     try {

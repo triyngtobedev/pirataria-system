@@ -1,15 +1,147 @@
-name: Deploy to Railway
+name: Build, Validate & Deploy
+
 on:
   push:
     branches: [master]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18'
+
 jobs:
-  deploy:
+  validate:
+    name: Validate
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      changelog: ${{ steps.changelog.outputs.changelog }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install Railway CLI
-        run: npm i -g @railway/cli
-      - name: Deploy
-        run: railway up --detach
+
+      - name: Check required files
+        run: |
+          REQUIRED=("index.html" "favicon.svg" "manifest.json" "sw.js" "style.css" "src/app.js" "src/router.js" "src/db.js" "src/constants.js")
+          for f in "${REQUIRED[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "::error::Missing required file: $f"
+              exit 1
+            fi
+          done
+          echo "All required files present."
+
+      - name: Validate JSON files
+        run: |
+          for f in manifest.json railway.json package.json; do
+            if jq empty "$f" 2>/dev/null; then
+              echo "Valid JSON: $f"
+            else
+              echo "::error::Invalid JSON: $f"
+              exit 1
+            fi
+          done
+
+      - name: Check asset integrity
+        run: |
+          echo "Checking referenced assets..."
+          grep -oP 'src="([^"]+)"' index.html | while IFS= read -r match; do
+            path=$(echo "$match" | sed 's/src="//;s/"//')
+            if [ ! -f "$path" ]; then
+              echo "::warning::Referenced asset not found: $path"
+            fi
+          done
+          echo "Asset check complete."
+
+      - name: Set version
+        id: version
+        run: |
+          DATE=$(date -u +'%Y%m%d')
+          HASH=$(git rev-parse --short HEAD)
+          VER="${DATE}.${HASH}"
+          echo "version=$VER" >> $GITHUB_OUTPUT
+          echo "Version: $VER"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          LOG=$(git log -1 --format="%s" HEAD)
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "Versão: ${{ steps.version.outputs.version }}" >> $GITHUB_OUTPUT
+          echo "Data: $(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "Hash: $(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "Mensagem: $LOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Generate version.json
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          COMMIT_MSG=$(git log -1 --format="%s" HEAD)
+          DATE_ISO=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          cat > version.json << VEOF
+          {
+            "version": "${VERSION}",
+            "date": "${DATE_ISO}",
+            "hash": "${COMMIT_HASH}",
+            "message": "${COMMIT_MSG}"
+          }
+          VEOF
+          echo "version.json generated: $(cat version.json)"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: |
+            .
+            !.git
+            !.github
+            !node_modules
+            !README.md
+            !*.md
+          retention-days: 1
+
+  deploy:
+    name: Deploy to Railway
+    needs: validate
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download version.json artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+
+      - name: Inject version into index.html
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          sed -i "s|<meta name=\"version\" content=\"[^\"]*\">|<meta name=\"version\" content=\"${VERSION}\">|" index.html
+          sed -i "s|<span id=\"versionHash\">[^<]*</span>|<span id=\"versionHash\">v${VERSION}</span>|" index.html
+          echo "Version injected: $VERSION"
+
+      - name: Commit version.json back to repo
+        run: |
+          git config user.name "bodyartos-bot"
+          git config user.email "bot@pirataria.com"
+          git add version.json
+          git diff --cached --quiet || git commit -m "chore: auto-update version.json [skip ci]"
+          git push origin master
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to Railway
+        run: |
+          if [ -n "${{ secrets.RAILWAY_TOKEN }}" ]; then
+            npm install -g @railway/cli
+            railway up --service ${{ vars.RAILWAY_SERVICE || '' }}
+            echo "Deploy triggered successfully."
+          else
+            echo "RAILWAY_TOKEN not set. Skipping Railway deploy."
+            echo "To enable auto-deploy:"
+            echo "  1. Go to https://railway.app/account/tokens and create a token"
+            echo "  2. Add RAILWAY_TOKEN to GitHub Secrets"
+            echo "  3. Optionally add RAILWAY_SERVICE to GitHub Variables"
+            echo ""
+            echo "Current version: ${{ needs.validate.outputs.version }}"
+          fi
