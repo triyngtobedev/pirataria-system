@@ -133,6 +133,69 @@ const AgendamentoAssistente = {
     return '';
   },
 
+  // ─── Modo Assistido de Agendamento ───
+  // Pré-agendamento (rascunho antes da confirmação)
+  criarPreAgendamento: function(conversaId, data, horario, servico, profissional) {
+    var c = DB.getConversa(conversaId);
+    if (!c) return null;
+    var pre = { data: data, horario: horario, servico: servico || '', profissional: profissional || '', clientName: c.clientName, clientId: c.clientId, criadoEm: DB._now(), status: 'rascunho' };
+    DB.updateConversa(conversaId, { preAgendamento: JSON.stringify(pre) });
+    if (c.clientId) CRM.addTimeline(c.clientId, 'pre_agendamento', 'Pr\u00e9-agendamento criado: ' + servico + ' em ' + data + ' \u00e0s ' + horario, conversaId);
+    return pre;
+  },
+
+  getPreAgendamento: function(conversaId) {
+    var c = DB.getConversa(conversaId);
+    if (!c || !c.preAgendamento) return null;
+    try { return JSON.parse(c.preAgendamento); } catch(e) { return null; }
+  },
+
+  clearPreAgendamento: function(conversaId) {
+    DB.updateConversa(conversaId, { preAgendamento: null });
+  },
+
+  confirmarPreAgendamento: function(conversaId) {
+    var pre = this.getPreAgendamento(conversaId);
+    if (!pre) return null;
+    var a = this.criarAgendamento(pre.data, pre.horario, pre.clientName, pre.clientId, pre.servico, pre.profissional, conversaId);
+    if (a) {
+      pre.status = 'confirmado';
+      pre.confirmadoEm = DB._now();
+      pre.appointmentId = a.id;
+      DB.updateConversa(conversaId, { preAgendamento: JSON.stringify(pre) });
+      if (pre.clientId) CRM.addTimeline(pre.clientId, 'agendamento_confirmado', 'Agendamento confirmado: ' + pre.servico + ' em ' + pre.data + ' \u00e0s ' + pre.horario, a.id);
+      // Sincronizar com Google Calendar
+      if (GoogleCalendar.isConnected()) {
+        GoogleCalendar.createEvent(a).then(function(eventId) {
+          if (eventId) Repos.agenda.update(a.id, { googleEventId: eventId });
+        }).catch(function() {});
+      }
+    }
+    return a;
+  },
+
+  // Sugerir até 3 horários (Modo Assistido)
+  getSugestoesAssistidas: function(data, profissional) {
+    var horarios = this.getHorariosDisponiveis(data, profissional);
+    if (horarios.length === 0) return [];
+    // Retornar até 3 horários espaçados (manhã, tarde, fim de tarde)
+    var sugestoes = [];
+    var manha = horarios.filter(function(h) { var hora = parseInt(h.hora); return hora >= 8 && hora <= 12; });
+    var tarde = horarios.filter(function(h) { var hora = parseInt(h.hora); return hora >= 13 && hora <= 17; });
+    var noite = horarios.filter(function(h) { var hora = parseInt(h.hora); return hora >= 18; });
+    if (manha.length > 0) sugestoes.push(manha[0]);
+    if (tarde.length > 0) sugestoes.push(tarde[0]);
+    if (noite.length > 0) sugestoes.push(noite[0]);
+    // Se não tiver 3, completar com qualquer horário disponível
+    if (sugestoes.length < 3) {
+      var restantes = horarios.filter(function(h) { return !sugestoes.some(function(s) { return s.hora === h.hora; }); });
+      for (var i = 0; i < restantes.length && sugestoes.length < 3; i++) {
+        sugestoes.push(restantes[i]);
+      }
+    }
+    return sugestoes;
+  },
+
   getMensagensProntas: function(horarios, data, clientName, servico) {
     var msgs = [];
     var settings = Repos.studio.settings.get();
