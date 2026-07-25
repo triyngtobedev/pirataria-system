@@ -27,6 +27,12 @@ const App = {
     this.bindNav();
     if (typeof Notificacao !== 'undefined') Notificacao._updateBadge();
     this._updateVersionDisplay();
+    if (typeof Onboarding !== 'undefined' && !Onboarding.isComplete()) {
+      if (typeof App.renderOnboarding === 'function') {
+        App.renderOnboarding();
+        return;
+      }
+    }
     this.navigate(this._getDefaultModule());
     var self = this;
     if (this._isFirstAccess) {

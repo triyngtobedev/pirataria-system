@@ -223,6 +223,19 @@ const AIHub = {
     return insights;
   },
 
+  _analiseOnboarding: function() {
+    var insights = [];
+    if (typeof Onboarding === 'undefined' || Onboarding.isComplete()) return insights;
+    var comp = Onboarding.getCompleteness();
+    if (comp.percent < 100) {
+      insights.push(AIHub._make('alerta', 'onboarding', 0, 'Configura\u00e7\u00e3o incompleta (' + comp.percent + '%)', comp.naoConfigurados.length + ' item(ns) pendente(s): ' + comp.naoConfigurados.map(function(i) { return i.label; }).join(', '), 'onboarding', null, 'Continuar configura\u00e7\u00e3o', 'navigate', 'studio'));
+    }
+    if (comp.percent >= 80 && comp.percent < 100) {
+      insights.push(AIHub._make('info', 'onboarding', 2, 'Quase l\u00e1', 'Faltam ' + comp.naoConfigurados.length + ' configura\u00e7\u00f5es. Revise o checklist.', 'onboarding', null, 'Ver checklist', 'navigate', 'studio'));
+    }
+    return insights;
+  },
+
   _analiseOportunidades: function() {
     var insights = [];
     var ops = Oportunidade.collect();
@@ -239,6 +252,7 @@ const AIHub = {
 
   collect: function() {
     return [].concat(
+      this._analiseOnboarding(),
       this._analiseCRM(),
       this._analiseOrcamentos(),
       this._analisePosAtendimento(),
