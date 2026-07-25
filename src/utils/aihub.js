@@ -209,6 +209,21 @@ const AIHub = {
 
   // ─── Coletores públicos ───
 
+  _analiseInstagram: function() {
+    var insights = [];
+    var ig = Marketing.getResumoInstagram();
+    if (ig.hoje > 0) {
+      insights.push(AIHub._make('alerta', 'instagram', 1, ig.hoje + ' publica\u00e7\u00e3o' + (ig.hoje !== 1 ? '\u00f5es' : '') + ' para hoje', 'Conte\u00fado(s) agendado(s) para publica\u00e7\u00e3o hoje.', 'marketing', null, 'Ver marketing', 'navigate', 'marketing'));
+    }
+    if (ig.atrasados > 0) {
+      insights.push(AIHub._make('alerta', 'instagram', 1, ig.atrasados + ' publica\u00e7\u00e3o' + (ig.atrasados !== 1 ? '\u00f5es' : '') + ' atrasada' + (ig.atrasados !== 1 ? 's' : ''), 'Conte\u00fado(s) com data vencida sem publica\u00e7\u00e3o.', 'marketing', null, 'Ver atrasados', 'navigate', 'marketing'));
+    }
+    if (ig.prontos > 0) {
+      insights.push(AIHub._make('info', 'instagram', 2, ig.prontos + ' conte\u00fado' + (ig.prontos !== 1 ? 's' : '') + ' pronto' + (ig.prontos !== 1 ? 's' : '') + ' para publicar', 'Materiais produzidos aguardando publica\u00e7\u00e3o.', 'marketing', null, 'Ver prontos', 'navigate', 'marketing'));
+    }
+    return insights;
+  },
+
   _analiseAgendamento: function() {
     var insights = [];
     var hoje = DB._today();
@@ -313,6 +328,7 @@ const AIHub = {
   collect: function() {
     return [].concat(
       this._analiseOnboarding(),
+      this._analiseInstagram(),
       this._analiseAgendamento(),
       this._analiseConfirmacao(),
       this._analiseComunicacao(),

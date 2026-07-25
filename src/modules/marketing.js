@@ -27,26 +27,90 @@ App._renderMktTab = function() {
   else if (this._mktTab === 'templates') this._renderMktTemplates(el);
 };
 
+App._mktInstaFiltroPerfil = '';
+App._mktInstaFiltroStatus = '';
+
 App._renderMktCalendario = function(el) {
-  var items = Marketing.listItems();
-  var metrics = Marketing.getMetrics();
-  var html = '<div class="rp-grid" style="margin-bottom:16px;">' +
-    '<div class="rp-card"><span class="rp-num">' + metrics.ideias + '</span><span class="rp-lbl">Ideias</span></div>' +
-    '<div class="rp-card"><span class="rp-num">' + metrics.planejados + '</span><span class="rp-lbl">Planejados</span></div>' +
-    '<div class="rp-card rp-card-green"><span class="rp-num">' + metrics.publicados + '</span><span class="rp-lbl">Publicados</span></div>' +
-    '<div class="rp-card rp-card-red"><span class="rp-num">' + metrics.atrasados + '</span><span class="rp-lbl">Atrasados</span></div>' +
-  '</div>' +
-  '<div class="flex gap-8 mb-12"><button class="btn btn-primary btn-sm" onclick="App._showNewMktItem()">+ Novo conte\u00fado</button></div>';
+  var data = Marketing.collectInstagram();
+  var igResumo = Marketing.getResumoInstagram();
+  var items = data.items;
+  var perfis = data.perfis;
 
-  if (items.length === 0) { html += C.emptyStateFull({icon:'calendar', title:'Nenhum conte\u00fado no calend\u00e1rio', desc:'Adicione ideias ou crie diretamente.'}); el.innerHTML = html; return; }
+  if (this._mktInstaFiltroPerfil) items = items.filter(function(i) { return i.perfilId === App._mktInstaFiltroPerfil; });
+  if (this._mktInstaFiltroStatus) items = items.filter(function(i) { return i.statusCalc === App._mktInstaFiltroStatus; });
 
-  html += '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>T\u00edtulo</th><th>Perfil</th><th>Status</th><th></th></tr></thead><tbody>' +
-    items.map(function(c) {
-      var stCls = c.status === 'publicado' ? 'badge-completed' : c.status === 'cancelado' ? 'badge-cancelled' : c.status === 'produzido' ? 'badge-progress' : c.status === 'planejado' ? 'badge-scheduled' : 'badge-waiting';
-      return '<tr class="clickable" onclick="App._viewMktItem(\'' + c.id + '\')"><td class="text-muted text-sm">' + (c.dataPrevista || '—') + '</td><td class="text-sm">' + (c.tipo || '—') + '</td><td>' + App._esc(c.titulo) + '</td><td class="text-muted text-sm">' + App._esc(c.perfilDestino || '—') + '</td><td><span class="badge ' + stCls + '">' + (Marketing.STATUS_LABELS[c.status] || c.status) + '</span></td><td><button class="btn btn-sm" onclick="event.stopPropagation();App._viewMktItem(\'' + c.id + '\')">Detalhes</button></td></tr>';
-    }).join('') + '</tbody></table></div>';
+  var html = '<div class="rp-grid" style="margin-bottom:12px;">' +
+    '<div class="rp-card rp-card-red"><span class="rp-num">' + igResumo.hoje + '</span><span class="rp-lbl">Publicar hoje</span></div>' +
+    '<div class="rp-card rp-card-red"><span class="rp-num">' + igResumo.atrasados + '</span><span class="rp-lbl">Atrasados</span></div>' +
+    '<div class="rp-card rp-card-green"><span class="rp-num">' + igResumo.prontos + '</span><span class="rp-lbl">Prontos</span></div>' +
+    '<div class="rp-card"><span class="rp-num">' + igResumo.total + '</span><span class="rp-lbl">Total</span></div>' +
+  '</div>';
 
+  // Filters
+  html += '<div class="hj-filtros" style="margin-bottom:12px;">' +
+    '<span class="hj-chip ' + (!this._mktInstaFiltroPerfil ? 'hj-chip-active' : '') + '" onclick="App._mktInstaFiltroPerfil=\'\';App._renderMktCalendario(document.getElementById(\'mktContent\'))">Todos</span>';
+  perfis.forEach(function(p) {
+    html += '<span class="hj-chip ' + (App._mktInstaFiltroPerfil === p.id ? 'hj-chip-active' : '') + '" onclick="App._mktInstaFiltroPerfil=\'' + p.id + '\';App._renderMktCalendario(document.getElementById(\'mktContent\'))">' + App._esc(p.nome) + '</span>';
+  });
+  html += '<span class="hj-chip ' + (App._mktInstaFiltroStatus === 'atrasado' ? 'hj-chip-active' : '') + '" onclick="App._mktInstaFiltroStatus=\'atrasado\';App._renderMktCalendario(document.getElementById(\'mktContent\'))">Atrasados</span>' +
+    '<span class="hj-chip ' + (App._mktInstaFiltroStatus === 'pronto' ? 'hj-chip-active' : '') + '" onclick="App._mktInstaFiltroStatus=\'pronto\';App._renderMktCalendario(document.getElementById(\'mktContent\'))">Prontos</span>' +
+    '<span class="hj-chip ' + (App._mktInstaFiltroStatus === '' && !App._mktInstaFiltroPerfil ? 'hj-chip-active' : '') + '" onclick="App._mktInstaFiltroPerfil=\'\';App._mktInstaFiltroStatus=\'\';App._renderMktCalendario(document.getElementById(\'mktContent\'))">Limpar</span>' +
+  '</div>';
+
+  html += '<div class="flex gap-8 mb-12"><button class="btn btn-primary btn-sm" onclick="App._showNewMktItem()">+ Novo conte\u00fado</button></div>';
+
+  if (items.length === 0) { html += C.emptyStateFull({icon:'calendar', title:'Nenhum conte\u00fado encontrado', desc:'Use os filtros ou crie um novo conte\u00fado.'}); el.innerHTML = html; return; }
+
+  html += '<div style="display:flex;flex-direction:column;gap:6px;">';
+  items.forEach(function(item) {
+    var cls = item.isOverdue ? 'rp-card-red' : item.isToday ? 'rp-card-yellow' : '';
+    var tipoIcon = { Feed: '\uD83D\uDCF7', Story: '\uD83D\uDCF1', Reels: '\uD83C\uDFAC', Carrossel: '\uD83D\uDCCB' };
+    var icon = tipoIcon[item.tipo] || '\uD83D\uDCF7';
+    var checklist = '';
+    if (item.statusCalc === 'pronto' || item.isToday) {
+      checklist = '<span style="font-size:0.62rem;color:var(--text-dim);">\u2713 legenda | \u2713 hashtags | \u2713 CTA</span>';
+    }
+
+    html += '<div class="' + cls + '" style="text-align:left;display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-md);">' +
+      '<div style="font-size:1.2rem;">' + icon + '</div>' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div><strong>' + App._esc(item.titulo) + '</strong> <span class="badge badge-progress" style="font-size:0.55rem;">' + item.tipo + '</span></div>' +
+        '<div style="font-size:0.7rem;color:var(--text-muted);">' +
+          (item.perfilDestino ? '<span class="badge badge-scheduled" style="font-size:0.55rem;">' + App._esc(item.perfilDestino) + '</span> ' : '') +
+          (item.dataPrevista ? item.dataPrevista : '') +
+          (item.cta ? ' \u2022 CTA: ' + App._esc(item.cta) : '') +
+        '</div>' +
+        (item.descricao ? '<div style="font-size:0.7rem;color:var(--text-dim);margin-top:2px;">' + App._esc(item.descricao) + '</div>' : '') +
+        (checklist ? '<div style="margin-top:4px;">' + checklist + '</div>' : '') +
+      '</div>' +
+      '<div style="flex-shrink:0;display:flex;gap:4px;flex-wrap:wrap;">' +
+        (item.statusCalc !== 'publicado' ? '<button class="btn btn-sm" style="font-size:0.65rem;color:var(--green);" onclick="Marketing.updateItem(\'' + item.id + '\',{status:\'publicado\'});App._renderMktCalendario(document.getElementById(\'mktContent\'))">Publicar</button>' : '') +
+        '<button class="btn btn-sm" style="font-size:0.65rem;" onclick="App._adiarMktItem(\'' + item.id + '\')">Adiar</button>' +
+        '<button class="btn btn-sm" style="font-size:0.65rem;" onclick="App._duplicarMktItem(\'' + item.id + '\')">Duplicar</button>' +
+        '<button class="btn btn-sm" style="font-size:0.65rem;" onclick="App._viewMktItem(\'' + item.id + '\')">Editar</button>' +
+      '</div>' +
+    '</div>';
+  });
+  html += '</div>';
   el.innerHTML = html;
+};
+
+App._adiarMktItem = function(id) {
+  var c = Marketing.getItem(id);
+  if (!c) return;
+  var novaData = prompt('Nova data (AAAA-MM-DD):', c.dataPrevista || '');
+  if (!novaData) return;
+  Marketing.updateItem(id, { dataPrevista: novaData });
+  App._toast('Conte\u00fado adiado para ' + novaData, 'success');
+  App._renderMktLayout();
+};
+
+App._duplicarMktItem = function(id) {
+  var c = Marketing.getItem(id);
+  if (!c) return;
+  Marketing.createItem({ dataPrevista: '', tipo: c.tipo, status: 'ideia', titulo: c.titulo + ' (c\u00f3pia)', descricao: c.descricao, cta: c.cta, perfilDestino: c.perfilDestino });
+  App._toast('Conte\u00fado duplicado.', 'success');
+  App._renderMktLayout();
 };
 
 App._showNewMktItem = function() {

@@ -45,16 +45,13 @@ const Comunicacao = {
     var agendamentosHoje = data.agenda.length;
     var agendamentosConfirmar = data.pendencias.agendamentosPendentes.length;
     var calendarioPendente = 0; // placeholder para Google Calendar
-    var instagramHoje = data.pendencias.conteudosHoje.length;
-    var instagramPendente = data.conteudos.filter(function(c) {
-      return c.dataPrevista && c.dataPrevista <= hoje && c.status !== 'publicado' && c.status !== 'cancelado';
-    }).length;
+    var igResumo = Marketing.getResumoInstagram();
 
     return {
       whatsapp: { pendentes: whatsappPendente, label: whatsappPendente + ' conversa' + (whatsappPendente !== 1 ? 's' : '') + ' sem resposta' },
       agenda: { hoje: agendamentosHoje, confirmar: agendamentosConfirmar, label: agendamentosHoje + ' agendamento' + (agendamentosHoje !== 1 ? 's' : '') + ' hoje' + (agendamentosConfirmar > 0 ? ' (' + agendamentosConfirmar + ' p/ confirmar)' : '') },
       calendario: { pendente: calendarioPendente, label: calendarioPendente > 0 ? calendarioPendente + ' evento' + (calendarioPendente !== 1 ? 's' : '') + ' n\u00e3o sincronizado' : 'Google Calendar: OK' },
-      instagram: { hoje: instagramHoje, pendente: instagramPendente, label: (instagramHoje > 0 ? instagramHoje + ' p/ publicar hoje' : '') + (instagramPendente > 0 ? (instagramHoje > 0 ? ' | ' : '') + instagramPendente + ' atrasado' : '') || 'Instagram: OK' },
+      instagram: { hoje: igResumo.hoje, pendente: igResumo.atrasados, label: igResumo.label },
       totalPendencias: whatsappPendente + agendamentosConfirmar + calendarioPendente + instagramPendente
     };
   }

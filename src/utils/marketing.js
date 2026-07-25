@@ -84,6 +84,76 @@ const Marketing = {
     return resultados;
   },
 
+  // Instagram Operational View
+  INSTA_TIPOS: ['Feed', 'Story', 'Reels', 'Carrossel'],
+  INSTA_STATUS: ['rascunho', 'pronto', 'publicado', 'atrasado'],
+  INSTA_STATUS_LABELS: { rascunho: 'Rascunho', pronto: 'Pronto', publicado: 'Publicado', atrasado: 'Atrasado' },
+
+  collectInstagram: function() {
+    var hoje = DB._today();
+    var settings = Repos.studio.settings.get();
+    var perfis = [];
+    if (settings.instagram) perfis.push({ id: 'estudio', nome: settings.instagram });
+    if (settings.instagramDigao) perfis.push({ id: 'digao', nome: settings.instagramDigao });
+
+    var items = DB.getCalendario().filter(function(c) {
+      return perfis.some(function(p) { return c.perfilDestino === p.nome; });
+    });
+
+    var resultados = [];
+    for (var i = 0; i < items.length; i++) {
+      var c = items[i];
+      var isOverdue = c.dataPrevista && c.dataPrevista < hoje && c.status !== 'publicado' && c.status !== 'cancelado';
+      var isToday = c.dataPrevista === hoje;
+      var perfil = perfis.find(function(p) { return p.nome === c.perfilDestino; });
+      var perfilId = perfil ? perfil.id : 'outro';
+
+      var statusCalc = isOverdue ? 'atrasado' : c.status === 'publicado' ? 'publicado' : c.status === 'produzido' ? 'pronto' : c.status === 'planejado' ? (isToday ? 'pronto' : 'rascunho') : 'rascunho';
+
+      resultados.push({
+        id: c.id,
+        perfilDestino: c.perfilDestino || '—',
+        perfilId: perfilId,
+        tipo: c.tipo || 'Story',
+        titulo: c.titulo,
+        descricao: c.descricao || '',
+        cta: c.cta || '',
+        dataPrevista: c.dataPrevista || '',
+        statusCalc: statusCalc,
+        statusLabel: Marketing.INSTA_STATUS_LABELS[statusCalc] || statusCalc,
+        statusOriginal: c.status,
+        isOverdue: isOverdue,
+        isToday: isToday,
+        clienteVinculado: c.clientId ? true : false
+      });
+    }
+
+    resultados.sort(function(a, b) {
+      if (a.isOverdue && !b.isOverdue) return -1;
+      if (!a.isOverdue && b.isOverdue) return 1;
+      if (a.isToday && !b.isToday) return -1;
+      if (!a.isToday && b.isToday) return 1;
+      return (a.dataPrevista || '') > (b.dataPrevista || '') ? 1 : -1;
+    });
+
+    return { items: resultados, perfis: perfis };
+  },
+
+  getResumoInstagram: function() {
+    var data = this.collectInstagram();
+    var hoje = DB._today();
+    var hojeItems = data.items.filter(function(i) { return i.isToday && i.statusCalc !== 'publicado'; });
+    var atrasados = data.items.filter(function(i) { return i.isOverdue; });
+    var prontos = data.items.filter(function(i) { return i.statusCalc === 'pronto' && !i.isToday; });
+    return {
+      hoje: hojeItems.length,
+      atrasados: atrasados.length,
+      prontos: prontos.length,
+      total: data.items.length,
+      label: (hojeItems.length > 0 ? hojeItems.length + ' p/ publicar hoje' : '') + (atrasados.length > 0 ? (hojeItems.length > 0 ? ' | ' : '') + atrasados.length + ' atrasado' + (atrasados.length !== 1 ? 's' : '') : '') || 'Instagram: OK'
+    };
+  },
+
   getMetrics: function() {
     var items = DB.getCalendario();
     var ideias = items.filter(function(c) { return c.status === 'ideia'; }).length;
