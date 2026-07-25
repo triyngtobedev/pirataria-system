@@ -54,6 +54,7 @@ App._renderTopbar = function(dados) {
       '<span class="hj-stat"><strong>' + dados.metadados.totalAgenda + '</strong> agendamentos</span>' +
       '<span class="hj-stat ' + caixaCls + '">' + caixaIcon + ' ' + caixaLabel + '</span>' +
       '<span class="hj-stat" style="color:var(--gold);cursor:pointer;" onclick="App.navigate(\'oportunidades\')"><strong>' + opResumo.total + '</strong> oportunidade' + (opResumo.total !== 1 ? 's' : '') + '</span>' +
+      '<span class="hj-stat" style="color:var(--accent-hover);cursor:pointer;" onclick="App.navigate(\'filas\')"><strong>' + Fila.getResumo().total + '</strong> na fila</span>' +
     '</div>' +
     this._renderNotifResumo() +
   '</div>';

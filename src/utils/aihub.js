@@ -209,6 +209,20 @@ const AIHub = {
 
   // ─── Coletores públicos ───
 
+  _analiseFila: function() {
+    var insights = [];
+    var fila = Fila.collect();
+    var criticos = fila.filter(function(i) { return i.prioridade >= 80; });
+    criticos.forEach(function(i) {
+      insights.push(AIHub._make('alerta', 'fila', 0, i.clientName + ' — ' + i.tipo + ' (prioridade ' + i.prioridade + ')', 'Motivos: ' + i.motivos.slice(0, 2).join('; '), 'fila', i.id, i.labelAcao || 'Abrir', 'navigate', i.targetAcao || 'filas'));
+    });
+    var tempoMedio = Fila.getTempoMedioPorPrioridade();
+    if (tempoMedio['81-100'] > 30) {
+      insights.push(AIHub._make('alerta', 'fila', 1, 'Tempo de espera alto para prioridade cr\u00edtica', 'M\u00e9dia de ' + Math.floor(tempoMedio['81-100'] / 60) + 'h' + (tempoMedio['81-100'] % 60) + 'min para prioridade 81-100.', 'fila', null, 'Ver fila', 'navigate', 'filas'));
+    }
+    return insights;
+  },
+
   _analiseOportunidades: function() {
     var insights = [];
     var ops = Oportunidade.collect();
@@ -234,7 +248,8 @@ const AIHub = {
       this._analiseConhecimento(),
       this._analiseHoje(),
       this._analiseInbox(),
-      this._analiseOportunidades()
+      this._analiseOportunidades(),
+      this._analiseFila()
     );
   },
 
