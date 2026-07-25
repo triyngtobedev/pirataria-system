@@ -13,10 +13,20 @@ App.renderHoje = function() {
   this._renderHojeAtual();
 };
 
+App._hojeTaskFilter = 'tudo';
+
 App._renderHojeAtual = function() {
   var dados = this._hojeData;
   var hoje = DB._today();
   var rCom = Comunicacao.getResumoOperacional();
+
+  // Task Queue
+  var tasks = Hoje.collectTasks();
+  var tasksFiltradas = tasks;
+  if (this._hojeTaskFilter === 'criticos') tasksFiltradas = tasks.filter(function(t) { return t.prioridade <= 0; });
+  else if (this._hojeTaskFilter === 'hoje') tasksFiltradas = tasks.filter(function(t) { return t.origem === 'agenda' || t.origem === 'confirmacao'; });
+  else if (this._hojeTaskFilter === 'pendentes') tasksFiltradas = tasks.filter(function(t) { return t.prioridade <= 2; });
+  else if (this._hojeTaskFilter === 'concluidos') tasksFiltradas = [];
 
   // Coletar dados para as seções
   var conversasSemResp = DB.getConversas().filter(function(c) { return c.status !== 'encerrada' && c.status === 'aguardando_estudio'; });
@@ -34,14 +44,12 @@ App._renderHojeAtual = function() {
 
   // AI Hub - Plano do Dia
   var plano = AIHub.collect().filter(function(i) { return i.prioridade <= 1; });
-  var planoTitulo = 'Bom dia!';
   var primeiraTarefa = plano.length > 0 ? plano[0].titulo : 'Nenhuma prioridade cr\u00edtica';
   var maiorPrioridade = plano.length > 0 ? plano[0].categoria : 'Tudo em ordem';
   var principalRisco = plano.filter(function(i) { return i.tipo === 'alerta'; }).length > 0 ? plano.filter(function(i) { return i.tipo === 'alerta'; })[0].titulo : 'Nenhum risco identificado';
   var proxPub = igHoje.length > 0 ? igHoje[0].titulo + ' (' + igHoje[0].perfilDestino + ')' : 'Nenhuma';
   var proxAgenda = agendaHoje.length > 0 ? agendaHoje[0].clientName + ' \u00e0s ' + agendaHoje[0].time : 'Nenhum';
   var qtdConversas = conversasSemResp.length;
-  var fluxoAgendamento = 0;
   var gcStatus = GoogleCalendar.getSyncStatus();
   var gcAlerta = !gcStatus.connected ? 'GC n\u00e3o conectado' : gcStatus.falha ? 'Falha GC' : '';
   var fluxoAgendamento = 0;
@@ -70,6 +78,31 @@ App._renderHojeAtual = function() {
 
       // Google Calendar alert
       (gcAlerta ? '<div class="hj-notif-resumo hj-notif-critico" onclick="App.navigate(\'studio\')" style="cursor:pointer;margin-bottom:12px;"><span class="hj-notif-icon">&#128197;</span><span class="hj-notif-text"><strong>' + gcAlerta + '</strong></span><span class="hj-notif-btn">Configurar</span></div>' : '') +
+
+      // Fila Única de Tarefas
+      '<div class="hj-bloco">' +
+        C.sectionHeader('Fila \u00danica de Tarefas',
+          '<span style="font-size:0.72rem;color:var(--text-muted);display:flex;gap:6px;align-items:center;">' +
+            '<span class="hj-chip ' + (this._hojeTaskFilter === 'tudo' ? 'hj-chip-active' : '') + '" onclick="App._hojeTaskFilter=\'tudo\';App._renderHojeAtual();" style="font-size:0.6rem;padding:2px 8px;cursor:pointer;">Todas</span>' +
+            '<span class="hj-chip ' + (this._hojeTaskFilter === 'criticos' ? 'hj-chip-active' : '') + '" onclick="App._hojeTaskFilter=\'criticos\';App._renderHojeAtual();" style="font-size:0.6rem;padding:2px 8px;cursor:pointer;">Cr\u00edticas</span>' +
+            '<span class="hj-chip ' + (this._hojeTaskFilter === 'hoje' ? 'hj-chip-active' : '') + '" onclick="App._hojeTaskFilter=\'hoje\';App._renderHojeAtual();" style="font-size:0.6rem;padding:2px 8px;cursor:pointer;">Hoje</span>' +
+            '<span class="hj-chip ' + (this._hojeTaskFilter === 'pendentes' ? 'hj-chip-active' : '') + '" onclick="App._hojeTaskFilter=\'pendentes\';App._renderHojeAtual();" style="font-size:0.6rem;padding:2px 8px;cursor:pointer;">Pendentes</span>' +
+            '<span class="hj-contador">' + tasks.length + '</span>' +
+          '</span>') +
+        (tasksFiltradas.length === 0
+          ? L.empty('Nenhuma tarefa pendente', 'Tudo resolvido por aqui!', 'bell')
+          : '<div class="hj-card-list">' + tasksFiltradas.slice(0, 10).map(function(t) {
+            var prioLabels = { 0: { label: 'Cr\u00edtica', cls: 'badge-cancelled' }, 1: { label: 'Alta', cls: 'badge-progress' }, 2: { label: 'M\u00e9dia', cls: 'badge-scheduled' }, 3: { label: 'Baixa', cls: 'badge-waiting' } };
+            var p = prioLabels[t.prioridade] || prioLabels[3];
+            var origemLabels = { confirmacao: '\u2705', whatsapp: '\uD83D\uDCAC', agendamento: '\uD83D\uDCC5', crm: '\uD83D\uDC64', oportunidade: '\u2728', agenda: '\uD83D\uDCCB', financeiro: '\uD83D\uDCB0', posatendimento: '\uD83C\uDFE5', notificacao: '\uD83D\uDD14' };
+            var icon = origemLabels[t.origem] || '\u2022';
+            return '<div class="hj-card" style="cursor:pointer;"><div class="hj-card-main"><div class="hj-card-avatar" style="font-size:1rem;background:transparent;">' + icon + '</div><div class="hj-card-body"><div class="hj-card-title">' +
+              App._esc(t.clientName || t.descricao) + ' <span class="badge ' + p.cls + '" style="font-size:0.55rem;">' + p.label + '</span> <span style="font-size:0.6rem;color:var(--text-dim);">[' + t.origem + ']</span></div>' +
+              '<div class="hj-card-desc">' + App._esc(t.descricao) + (t.horario ? ' \u2022 ' + t.horario : '') + '</div></div>' +
+              '<div class="hj-card-actions"><button class="btn btn-primary btn-sm hj-card-btn" onclick="' + t.acaoFn + '">' + App._esc(t.acaoLabel) + '</button></div></div></div>';
+          }).join('') + '</div>') +
+        (tasksFiltradas.length > 10 ? '<div class="hj-mais" onclick="App.navigate(\'filas\')">Ver todas (+' + (tasksFiltradas.length - 10) + ')</div>' : '') +
+      '</div>' +
 
       // Seção 1: Responder WhatsApp
       '<div class="hj-bloco">' +
