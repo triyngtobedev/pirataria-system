@@ -45,6 +45,8 @@ const ASSETS = [
   '/src/modules/onboarding.js',
   '/src/utils/comunicacao.js',
   '/src/modules/comunicacao.js',
+  '/src/utils/confirmacao.js',
+  '/src/modules/confirmacao.js',
   '/src/components/index.js',
   '/src/components/emptyState.js',
   '/src/components/badge.js',

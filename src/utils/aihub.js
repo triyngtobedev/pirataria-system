@@ -209,6 +209,21 @@ const AIHub = {
 
   // ─── Coletores públicos ───
 
+  _analiseConfirmacao: function() {
+    var insights = [];
+    var resumo = Confirmacao.getResumo();
+    if (resumo.riscoAlto > 0) {
+      insights.push(AIHub._make('alerta', 'confirmacao', 0, resumo.riscoAlto + ' agendamento' + (resumo.riscoAlto !== 1 ? 's' : '') + ' com alto risco de falta', 'Priorize a confirma\u00e7\u00e3o destes clientes.', 'agenda', null, 'Ver confirma\u00e7\u00f5es', 'navigate', 'confirmacao'));
+    }
+    if (resumo.hojeNaoConfirmados > 0) {
+      insights.push(AIHub._make('alerta', 'confirmacao', 1, resumo.hojeNaoConfirmados + ' agendamento' + (resumo.hojeNaoConfirmados !== 1 ? 's' : '') + ' de hoje n\u00e3o confirmado' + (resumo.hojeNaoConfirmados !== 1 ? 's' : ''), 'Clientes com agendamento hoje sem confirma\u00e7\u00e3o.', 'agenda', null, 'Confirmar agora', 'navigate', 'confirmacao'));
+    }
+    if (resumo.pendentes > 0) {
+      insights.push(AIHub._make('info', 'confirmacao', 2, resumo.pendentes + ' confirma\u00e7\u00e3o' + (resumo.pendentes !== 1 ? '\u00f5es' : '') + ' pendente' + (resumo.pendentes !== 1 ? 's' : ''), 'Total de agendamentos aguardando confirma\u00e7\u00e3o.', 'agenda', null, 'Ver todas', 'navigate', 'confirmacao'));
+    }
+    return insights;
+  },
+
   _analiseComunicacao: function() {
     var insights = [];
     var r = Comunicacao.getResumoOperacional();
@@ -271,6 +286,7 @@ const AIHub = {
   collect: function() {
     return [].concat(
       this._analiseOnboarding(),
+      this._analiseConfirmacao(),
       this._analiseComunicacao(),
       this._analiseCRM(),
       this._analiseOrcamentos(),
