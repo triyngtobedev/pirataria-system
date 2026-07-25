@@ -43,6 +43,8 @@ const ASSETS = [
   '/src/utils/fila.js',
   '/src/utils/onboarding.js',
   '/src/modules/onboarding.js',
+  '/src/utils/comunicacao.js',
+  '/src/modules/comunicacao.js',
   '/src/components/index.js',
   '/src/components/emptyState.js',
   '/src/components/badge.js',

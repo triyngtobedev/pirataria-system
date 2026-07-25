@@ -21,6 +21,7 @@ App._renderHojeAtual = function() {
     '<div class="hj-wrap">' +
       this._renderTopbar(dados) +
       this._renderResumo(dados) +
+      this._renderComunicacaoResumo() +
       this._renderFiltros() +
       this._renderBlocoAcao('A\u00e7\u00f5es Priorit\u00e1rias', filtrados.blocoAcoes, 'bell', 'atendimento') +
       this._renderBlocoAgenda(filtrados.blocoAgenda) +
@@ -394,4 +395,21 @@ App._renderBlocoMarketing = function(items) {
   }
   html += '</div><div class="hj-mais" onclick="App.navigate(\'marketing\')">Abrir Central de Marketing</div></div>';
   return html;
+};
+
+App._renderComunicacaoResumo = function() {
+  var r = Comunicacao.getResumoOperacional();
+  var total = r.totalPendencias;
+  if (total === 0) return '';
+  var critico = r.whatsapp.pendentes > 0 || r.instagram.pendente > 0;
+  return '<div class="hj-notif-resumo ' + (critico ? 'hj-notif-critico' : '') + '" onclick="App.navigate(\'comunicacao\')" style="cursor:pointer;">' +
+    '<span class="hj-notif-icon" style="font-size:1.2rem;">&#128172;</span>' +
+    '<span class="hj-notif-text"><strong>' + total + '</strong> pend\u00eancia' + (total !== 1 ? 's' : '') + ' operaciona' + (total !== 1 ? 'is' : 'l') + '</span>' +
+    '<span style="font-size:0.72rem;color:var(--text-muted);">' +
+      (r.whatsapp.pendentes > 0 ? r.whatsapp.pendentes + ' WhatsApp | ' : '') +
+      (r.agenda.confirmar > 0 ? r.agenda.confirmar + ' confirmar | ' : '') +
+      (r.instagram.pendente > 0 ? r.instagram.pendente + ' Instagram' : '') +
+    '</span>' +
+    '<span class="hj-notif-btn">Abrir Central</span>' +
+  '</div>';
 };

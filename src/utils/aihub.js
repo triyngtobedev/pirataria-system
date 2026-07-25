@@ -209,6 +209,24 @@ const AIHub = {
 
   // ─── Coletores públicos ───
 
+  _analiseComunicacao: function() {
+    var insights = [];
+    var r = Comunicacao.getResumoOperacional();
+    if (r.whatsapp.pendentes > 0) {
+      insights.push(AIHub._make('alerta', 'comunicacao', 0, r.whatsapp.pendentes + ' conversa' + (r.whatsapp.pendentes !== 1 ? 's' : '') + ' sem resposta no WhatsApp', 'Priorize o atendimento no WhatsApp.', 'inbox', null, 'Abrir WhatsApp', 'navigate', 'inbox'));
+    }
+    if (r.agenda.confirmar > 0) {
+      insights.push(AIHub._make('alerta', 'comunicacao', 1, r.agenda.confirmar + ' agendamento' + (r.agenda.confirmar !== 1 ? 's' : '') + ' pendente' + (r.agenda.confirmar !== 1 ? 's' : '') + ' de confirma\u00e7\u00e3o', 'Confirme os agendamentos pendentes.', 'agenda', null, 'Ver agenda', 'navigate', 'agenda'));
+    }
+    if (r.instagram.pendente > 0) {
+      insights.push(AIHub._make('alerta', 'comunicacao', 2, r.instagram.pendente + ' publica\u00e7\u00e3o' + (r.instagram.pendente !== 1 ? '\u00f5es' : '') + ' atrasada' + (r.instagram.pendente !== 1 ? 's' : '') + ' no Instagram', r.instagram.pendente + ' conte\u00fado' + (r.instagram.pendente !== 1 ? 's' : '') + ' aguardando publica\u00e7\u00e3o.', 'marketing', null, 'Ver marketing', 'navigate', 'marketing'));
+    }
+    if (r.calendario.pendente > 0) {
+      insights.push(AIHub._make('info', 'comunicacao', 2, 'Google Calendar com eventos pendentes', r.calendario.label, 'comunicacao', null, 'Abrir', 'navigate', 'comunicacao'));
+    }
+    return insights;
+  },
+
   _analiseFila: function() {
     var insights = [];
     var fila = Fila.collect();
@@ -253,6 +271,7 @@ const AIHub = {
   collect: function() {
     return [].concat(
       this._analiseOnboarding(),
+      this._analiseComunicacao(),
       this._analiseCRM(),
       this._analiseOrcamentos(),
       this._analisePosAtendimento(),
