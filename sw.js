@@ -49,6 +49,7 @@ const ASSETS = [
   '/src/utils/copiloto.js',
   '/src/utils/fechamento_dia.js',
   '/src/utils/operador.js',
+  '/src/utils/memoria_operacional.js',
   '/src/modules/operador.js',
   '/src/utils/recomendacoes.js',
   '/src/utils/onboarding.js',

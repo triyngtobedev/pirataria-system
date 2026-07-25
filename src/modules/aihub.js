@@ -18,7 +18,8 @@ App._renderAI = function() {
       '<button class="btn btn-sm ' + (this._aiTab === 'alertas' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'alertas\')">Alertas</button>' +
       '<button class="btn btn-sm ' + (this._aiTab === 'todos' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'todos\')">Todos</button>' +
       '<button class="btn btn-sm ' + (this._aiTab === 'historico' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'historico\')">Hist\u00f3rico</button>' +
-      '<button class="btn btn-sm ' + (this._aiTab === 'timeline' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'timeline\')">Timeline</button>'
+      '<button class="btn btn-sm ' + (this._aiTab === 'timeline' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'timeline\')">Timeline</button>' +
+      '<button class="btn btn-sm ' + (this._aiTab === 'memoria' ? 'btn-primary' : '') + '" onclick="App._setAITab(\'memoria\')">Mem\u00f3ria</button>'
     ) +
     L.metrics([
       { value: score, label: 'Score operacional', cls: scoreCls },
@@ -43,6 +44,7 @@ App._renderAITab = function(insights) {
   else if (this._aiTab === 'alertas') filtrados = AIHub.getWarnings();
   else if (this._aiTab === 'historico') { this._renderAIHistorico(el); return; }
   else if (this._aiTab === 'timeline') { this._renderAITimeline(el); return; }
+  else if (this._aiTab === 'memoria') { this._renderAIMemoria(el); return; }
   else filtrados = insights;
 
   if (filtrados.length === 0) {
@@ -124,4 +126,51 @@ App._renderAITimeline = function(el) {
     }).join('') + '</tbody></table></div>';
 
   el.innerHTML = html;
+};
+
+App._renderAIMemoria = function(el) {
+  var insights = MemoriaOperacional.getInsights();
+  var tendencias = MemoriaOperacional.getTendencias();
+  var html = '<div class="rp-grid" style="margin-bottom:18px;">' +
+    '<div class="rp-card"><span class="rp-num">' + tendencias.clientesAtivos + '</span><span class="rp-lbl">Clientes na mem\u00f3ria</span></div>' +
+    '<div class="rp-card"><span class="rp-num">R$ ' + tendencias.faturamento7d.toFixed(2).replace('.', ',') + '</span><span class="rp-lbl">Faturamento 7 dias</span></div>' +
+    '<div class="rp-card"><span class="rp-num">R$ ' + tendencias.faturamento30d.toFixed(2).replace('.', ',') + '</span><span class="rp-lbl">Faturamento 30 dias</span></div>' +
+    '<div class="rp-card"><span class="rp-num">' + Object.keys(tendencias.servicos).length + '</span><span class="rp-lbl">Servi\u00e7os</span></div>' +
+  '</div>';
+  html += '<div class="hj-bloco">' + C.sectionHeader('Insights da Mem\u00f3ria Operacional', '');
+  if (insights.length === 0) {
+    html += L.empty('Nenhum insight dispon\u00edvel', 'A mem\u00f3ria \u00e9 alimentada automaticamente pelo EventBus.', 'bell');
+  } else {
+    html += '<div style="display:flex;flex-direction:column;gap:6px;">';
+    insights.forEach(function(i) {
+      var icon = i.tipo === 'alerta' ? '\u26A0' : '\u2139\uFE0F';
+      var color = i.tipo === 'alerta' ? 'var(--accent-hover)' : 'var(--text)';
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface-2);border-radius:var(--radius-sm);">' +
+        '<span style="color:' + color + ';">' + icon + '</span>' +
+        '<div style="flex:1;"><strong>' + App._esc(i.label) + '</strong><br><span style="font-size:0.78rem;color:var(--text-muted);">' + App._esc(i.valor) + (i.tendencia ? ' — ' + App._esc(i.tendencia) : '') + '</span></div>' +
+      '</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+
+  var servicos = Object.keys(tendencias.servicos).sort(function(a, b) { return tendencias.servicos[b] - tendencias.servicos[a]; });
+  if (servicos.length > 0) {
+    html += '<div class="hj-bloco">' + C.sectionHeader('Servi\u00e7os mais vendidos', '');
+    html += '<div style="display:flex;flex-direction:column;gap:4px;">';
+    servicos.slice(0, 10).forEach(function(s) {
+      html += '<div style="display:flex;justify-content:space-between;padding:6px 10px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:0.82rem;"><span>' + App._esc(s) + '</span><span>' + tendencias.servicos[s] + 'x</span></div>';
+    });
+    html += '</div></div>';
+  }
+
+  var sugestoes = MemoriaOperacional.getSugestoes();
+  if (sugestoes.length > 0) {
+    html += '<div class="hj-bloco">' + C.sectionHeader('Sugest\u00f5es para opera\u00e7\u00e3o', '');
+    html += '<div style="display:flex;flex-direction:column;gap:4px;">';
+    sugestoes.forEach(function(s) { html += '<div style="padding:8px 12px;background:var(--yellow-dim);border-radius:var(--radius-sm);font-size:0.82rem;">\u26A0 ' + App._esc(s) + '</div>'; });
+    html += '</div></div>';
+  }
+
+  el.innerHTML = html + '<div style="margin-top:16px;"><button class="btn btn-sm btn-danger" onclick="MemoriaOperacional.reset();App._renderAIMemoria(document.getElementById(\'aiContent\'))">Resetar mem\u00f3ria</button></div>';
 };
