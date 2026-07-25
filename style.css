@@ -1188,6 +1188,50 @@ input.has-error, select.has-error, textarea.has-error { border-color: var(--colo
 .opreal-tabela th { text-align:left; padding:6px; border-bottom:2px solid var(--border); font-size:0.63rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); white-space:nowrap; }
 .opreal-tabela td { padding:6px; border-bottom:1px solid var(--border-light); }
 
+/* ─── Diário Operacional ─── */
+.dio-wrap { display:flex; flex-direction:column; gap:12px; }
+.dio-aba { display:flex; gap:4px; }
+.dio-periodo { display:flex; align-items:center; }
+.dio-indicadores { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:6px; }
+.dio-card { display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 8px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); text-align:center; }
+.dio-card-icon { font-size:1.2rem; }
+.dio-card-val { font-size:1.1rem; font-weight:700; }
+.dio-card-lbl { font-size:0.6rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); }
+.dio-card-media { font-size:0.6rem; color:var(--text-dim); }
+.dio-section { display:flex; flex-direction:column; gap:6px; }
+.dio-section-title { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-muted); border-bottom:1px solid var(--border-light); padding-bottom:6px; }
+.dio-dia { border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; }
+.dio-dia-hoje { border-color:var(--accent-dim); }
+.dio-dia-header { display:flex; align-items:center; gap:8px; padding:10px 12px; cursor:pointer; background:var(--surface-2); font-size:0.82rem; }
+.dio-dia-header:hover { background:var(--surface-hover); }
+.dio-dia-label { flex:1; }
+.dio-dia-total { font-size:0.7rem; color:var(--text-muted); }
+.dio-dia-toggle { font-size:0.7rem; color:var(--text-dim); }
+.dio-dia-body { padding:10px 12px; border-top:1px solid var(--border-light); }
+.dio-dia-indicadores { display:flex; flex-direction:column; gap:3px; margin-bottom:8px; }
+.dio-dia-ind { font-size:0.75rem; display:flex; align-items:center; gap:6px; }
+.dio-dia-ind-icon { font-size:0.85rem; }
+.dio-dia-comp { font-size:0.65rem; margin-left:auto; }
+.dio-dia-up { color:#16a34a; }
+.dio-dia-down { color:#dc2626; }
+.dio-dia-gargalos { background:#dc262608; border-left:2px solid #dc2626; padding:6px 10px; margin:6px 0; font-size:0.72rem; }
+.dio-dia-gargalo { margin:2px 0; }
+.dio-dia-conquistas { background:#16a34a08; border-left:2px solid #16a34a; padding:6px 10px; margin:6px 0; font-size:0.72rem; }
+.dio-dia-conquista { margin:2px 0; }
+.dio-dia-anotacoes { background:#3b82f608; border-left:2px solid #3b82f6; padding:6px 10px; margin:6px 0; font-size:0.72rem; }
+.dio-dia-anotacao { margin:2px 0; }
+.dio-timeline { display:flex; flex-direction:column; gap:2px; }
+.dio-tl-item { display:flex; align-items:center; gap:8px; padding:4px 8px; border-radius:var(--radius-sm); font-size:0.72rem; }
+.dio-tl-item:hover { background:var(--surface-hover); }
+.dio-tl-hoje { background:var(--accent-dim); }
+.dio-tl-data { width:48px; font-size:0.65rem; color:var(--text-muted); flex-shrink:0; }
+.dio-tl-hora { width:48px; font-size:0.65rem; color:var(--text-dim); font-weight:600; flex-shrink:0; }
+.dio-tl-evento { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dio-tl-modulo { width:80px; font-size:0.6rem; color:var(--text-muted); text-align:right; flex-shrink:0; }
+.dio-tl-mais { text-align:center; font-size:0.7rem; color:var(--text-dim); padding:8px; }
+.dio-busca-wrap { margin-bottom:8px; }
+.dio-export { padding:8px 0; }
+
 /* ─── Pendências (Central de Pendências) ─── */
 .pen-wrap { display:flex; flex-direction:column; gap:12px; }
 .pen-contadores { display:flex; flex-wrap:wrap; gap:4px; padding:8px 0; }
