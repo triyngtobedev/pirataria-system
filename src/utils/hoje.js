@@ -393,19 +393,38 @@ const Hoje = {
     return result;
   },
 
-  // ─── Fila Única de Tarefas ───
+  // ─── Fila Única de Tarefas (com Motor de Priorização) ───
   collectTasks: function() {
     var today = DB._today();
     var tasks = [];
-    var push = function(prioridade, origem, clientName, clientId, descricao, horario, acaoLabel, acaoFn, taskId) {
-      tasks.push({ id: taskId || ('t_' + Date.now() + '_' + tasks.length), prioridade: prioridade, origem: origem, clientName: clientName || '', clientId: clientId || null, descricao: descricao, horario: horario || '', acaoLabel: acaoLabel, acaoFn: acaoFn });
+    var self = this;
+
+    var pushComScore = function(origem, clientName, clientId, descricao, horario, acaoLabel, acaoFn, taskId, contexto) {
+      var result = Prioritizacao.calcular(origem, contexto || {});
+      var task = {
+        id: taskId || ('t_' + Date.now() + '_' + tasks.length),
+        score: result.score,
+        prioridade: Prioritizacao.nivel(result.score),
+        prioridadeLabel: result.prioridade,
+        motivos: result.motivos,
+        origem: origem,
+        clientName: clientName || '',
+        clientId: clientId || null,
+        descricao: descricao,
+        horario: horario || '',
+        acaoLabel: acaoLabel,
+        acaoFn: acaoFn
+      };
+      tasks.push(task);
     };
 
     // Confirmações pendentes
     var confirmacoes = Confirmacao.collect();
     confirmacoes.forEach(function(c) {
       if (c.statusConfirmacao === 'pendente') {
-        push(c.prioridade <= 1 ? 0 : c.prioridade <= 2 ? 1 : 2, 'confirmacao', c.clientName, c.clientId, c.proximaAcao + ' — ' + c.service, c.time, 'Confirmar', "App.navigate('confirmacao')", 'conf_' + c.id);
+        pushComScore('confirmacao', c.clientName, c.clientId, c.proximaAcao + ' — ' + c.service, c.time, 'Confirmar', "App.navigate('confirmacao')", 'conf_' + c.id, {
+          pendenteConfirmacao: true, horario: c.time, data: c.date, isToday: c.isToday
+        });
       }
     });
 
@@ -413,7 +432,9 @@ const Hoje = {
     var wpp = typeof Inbox.collectWhatsApp === 'function' ? Inbox.collectWhatsApp() : [];
     wpp.forEach(function(w) {
       if (w.status === 'aguardando_estudio') {
-        push(w.prioridade <= 1 ? 0 : w.prioridade <= 2 ? 1 : 2, 'whatsapp', w.clientName, w.clientId, w.motivoLabel + ' — ' + w.tempoLabel, '', 'Responder', "App.navigate('inbox')", 'wpp_' + w.id);
+        pushComScore('whatsapp', w.clientName, w.clientId, w.motivoLabel + ' — ' + w.tempoLabel, '', 'Responder', "App.navigate('inbox')", 'wpp_' + w.id, {
+          mensagemNaoRespondida: true, ultimaInteracao: w.ultimaInteracao, aguardandoResposta: true, prioridade: w.priority
+        });
       }
     });
 
@@ -423,7 +444,9 @@ const Hoje = {
         try {
           var pre = JSON.parse(c.preAgendamento);
           if (pre && pre.status === 'rascunho') {
-            push(0, 'agendamento', c.clientName, c.clientId, 'Pr\u00e9-agendamento: ' + (pre.servico || '—') + ' em ' + pre.data + ' \u00e0s ' + pre.horario, pre.horario, 'Confirmar', "App.navigate('inbox')", 'pre_' + c.id);
+            pushComScore('agendamento', c.clientName, c.clientId, 'Pr\u00e9-agendamento: ' + (pre.servico || '—') + ' em ' + pre.data + ' \u00e0s ' + pre.horario, pre.horario, 'Confirmar', "App.navigate('inbox')", 'pre_' + c.id, {
+              horario: pre.horario, data: pre.data, pendenteConfirmacao: true
+            });
           }
         } catch(e) {}
       }
@@ -432,48 +455,55 @@ const Hoje = {
     // Clientes aguardando retorno (CRM nextAction vencida)
     DB.getClients().forEach(function(cl) {
       if (cl.crmNextDate && cl.crmNextDate < today && cl.crmNextAction) {
-        var prio = cl.crmPriority === 'high' ? 1 : cl.crmPriority === 'medium' ? 2 : 3;
-        push(prio, 'crm', cl.name, cl.id, cl.crmNextAction + (cl.crmNote ? ' — ' + cl.crmNote : ''), '', 'Abrir CRM', "App.openClientPanel('" + cl.id + "')", 'crm_' + cl.id);
+        pushComScore('crm', cl.name, cl.id, cl.crmNextAction + (cl.crmNote ? ' — ' + cl.crmNote : ''), '', 'Abrir CRM', "App.openClientPanel('" + cl.id + "')", 'crm_' + cl.id, {
+          followUpVencido: true, ultimaInteracao: cl.crmNextDate, clienteVip: (cl.totalVisits || 0) >= 3
+        });
       }
     });
 
     // Oportunidades sem follow-up
     var ops = typeof Oportunidade.collect === 'function' ? Oportunidade.collect() : [];
     ops.forEach(function(o) {
-      push(o.score >= 80 ? 1 : o.score >= 60 ? 2 : 3, 'oportunidade', o.clientName, o.clientId, o.descricao, '', o.btnLabel || 'Abrir', "App.navigate('" + o.btnTarget + "')", 'op_' + (o.id || Date.now()));
+      pushComScore('oportunidade', o.clientName, o.clientId, o.descricao, '', o.btnLabel || 'Abrir', "App.navigate('" + o.btnTarget + "')", 'op_' + (o.id || Date.now()), {
+        oportunidadeAlta: true, oportunidadeScore: o.score
+      });
     });
 
     // Agendamentos de hoje
     var agendaHoje = DB.getAppointmentsByDate(today).filter(function(a) { return a.status !== 'cancelled'; });
     agendaHoje.forEach(function(a) {
-      var prio = a.status === 'pending' ? 1 : a.status === 'confirmed' ? 2 : 3;
       var label = a.status === 'pending' ? 'Confirmar' : a.status === 'in_progress' ? 'Atender' : 'OK';
-      push(prio, 'agenda', a.clientName, a.clientId, a.service + ' \u00e0s ' + a.time, a.time, label, "App.navigate('agenda')", 'agd_' + a.id);
+      pushComScore('agenda', a.clientName, a.clientId, a.service + ' \u00e0s ' + a.time, a.time, label, "App.navigate('agenda')", 'agd_' + a.id, {
+        horario: a.time, data: a.date, agendamentoHoje: true, pendenteConfirmacao: a.status === 'pending'
+      });
     });
 
-    // Pagamentos pendentes (atendimentos concluídos sem lançamento)
+    // Pagamentos pendentes
     var doneToday = agendaHoje.filter(function(a) { return a.status === 'completed' && a.value; });
     doneToday.forEach(function(a) {
-      push(2, 'financeiro', a.clientName, a.clientId, 'Pagamento pendente: R$ ' + (a.value || '0'), a.time, 'Registrar', "App.navigate('financeiro')", 'pag_' + a.id);
+      pushComScore('financeiro', a.clientName, a.clientId, 'Pagamento pendente: R$ ' + (a.value || '0'), a.time, 'Registrar', "App.navigate('financeiro')", 'pag_' + a.id, {
+        pagamentoPendente: true
+      });
     });
 
     // Pós-atendimentos programados
     var planosRetornos = typeof PosAtendimento.collectRetornos === 'function' ? PosAtendimento.collectRetornos() : [];
     planosRetornos.forEach(function(r) {
-      push(r.prioridade, 'posatendimento', r.clientName, r.clientId, r.desc, r.dataPrevista || '', 'Concluir etapa', "App.openClientPanel('" + r.clientId + "')", 'pos_' + r.etapaId);
+      pushComScore('posatendimento', r.clientName, r.clientId, r.desc, r.dataPrevista || '', 'Concluir etapa', "App.openClientPanel('" + r.clientId + "')", 'pos_' + r.etapaId, {
+        followUpVencido: r.prioridade <= 1, ultimaInteracao: r.dataPrevista
+      });
     });
 
     // Notificações críticas
     var notifResumo = typeof Notificacao.collectHojeResumo === 'function' ? Notificacao.collectHojeResumo() : { criticas: 0 };
     if (notifResumo.criticas > 0) {
-      push(0, 'notificacao', '', null, notifResumo.criticas + ' notifica\u00e7\u00e3o' + (notifResumo.criticas !== 1 ? '\u00f5es' : '') + ' cr\u00edtica' + (notifResumo.criticas !== 1 ? 's' : ''), '', 'Ver', "App.openNotifPanel()", 'notif_criticas');
+      pushComScore('notificacao', '', null, notifResumo.criticas + ' notifica\u00e7\u00e3o' + (notifResumo.criticas !== 1 ? '\u00f5es' : '') + ' cr\u00edtica' + (notifResumo.criticas !== 1 ? 's' : ''), '', 'Ver', "App.openNotifPanel()", 'notif_criticas', {
+        notificacaoCritica: true
+      });
     }
 
-    // Ordenar: prioridade (0=crítica primeiro) + horário
-    tasks.sort(function(a, b) {
-      if (a.prioridade !== b.prioridade) return a.prioridade - b.prioridade;
-      return (a.horario || '') > (b.horario || '') ? 1 : -1;
-    });
+    // Ordenar por score decrescente
+    tasks.sort(function(a, b) { return b.score - a.score; });
 
     return tasks;
   },

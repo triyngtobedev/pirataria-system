@@ -92,13 +92,14 @@ App._renderHojeAtual = function() {
         (tasksFiltradas.length === 0
           ? L.empty('Nenhuma tarefa pendente', 'Tudo resolvido por aqui!', 'bell')
           : '<div class="hj-card-list">' + tasksFiltradas.slice(0, 10).map(function(t) {
-            var prioLabels = { 0: { label: 'Cr\u00edtica', cls: 'badge-cancelled' }, 1: { label: 'Alta', cls: 'badge-progress' }, 2: { label: 'M\u00e9dia', cls: 'badge-scheduled' }, 3: { label: 'Baixa', cls: 'badge-waiting' } };
-            var p = prioLabels[t.prioridade] || prioLabels[3];
+            var scoreCls = t.score >= 85 ? 'badge-cancelled' : t.score >= 65 ? 'badge-progress' : t.score >= 40 ? 'badge-scheduled' : 'badge-waiting';
             var origemLabels = { confirmacao: '\u2705', whatsapp: '\uD83D\uDCAC', agendamento: '\uD83D\uDCC5', crm: '\uD83D\uDC64', oportunidade: '\u2728', agenda: '\uD83D\uDCCB', financeiro: '\uD83D\uDCB0', posatendimento: '\uD83C\uDFE5', notificacao: '\uD83D\uDD14' };
             var icon = origemLabels[t.origem] || '\u2022';
             return '<div class="hj-card" style="cursor:pointer;"><div class="hj-card-main"><div class="hj-card-avatar" style="font-size:1rem;background:transparent;">' + icon + '</div><div class="hj-card-body"><div class="hj-card-title">' +
-              App._esc(t.clientName || t.descricao) + ' <span class="badge ' + p.cls + '" style="font-size:0.55rem;">' + p.label + '</span> <span style="font-size:0.6rem;color:var(--text-dim);">[' + t.origem + ']</span></div>' +
-              '<div class="hj-card-desc">' + App._esc(t.descricao) + (t.horario ? ' \u2022 ' + t.horario : '') + '</div></div>' +
+              App._esc(t.clientName || t.descricao) + ' <span class="badge ' + scoreCls + '" style="font-size:0.55rem;">' + t.prioridadeLabel + '</span> <span style="font-size:0.55rem;color:var(--text-dim);">Score ' + t.score + '</span></div>' +
+              '<div class="hj-card-desc">' + App._esc(t.descricao) + (t.horario ? ' \u2022 ' + t.horario : '') + '</div>' +
+              (t.motivos && t.motivos.length > 0 ? '<div style="margin-top:3px;display:flex;flex-wrap:wrap;gap:3px;">' + t.motivos.map(function(m) { return '<span class="badge badge-scheduled" style="font-size:0.5rem;padding:1px 4px;">' + App._esc(m) + '</span>'; }).join('') + '</div>' : '') +
+              '</div>' +
               '<div class="hj-card-actions"><button class="btn btn-primary btn-sm hj-card-btn" onclick="' + t.acaoFn + '">' + App._esc(t.acaoLabel) + '</button></div></div></div>';
           }).join('') + '</div>') +
         (tasksFiltradas.length > 10 ? '<div class="hj-mais" onclick="App.navigate(\'filas\')">Ver todas (+' + (tasksFiltradas.length - 10) + ')</div>' : '') +
