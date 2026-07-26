@@ -61,7 +61,7 @@ App._setInboxFilter = function(filtro) {
 
 App._onInboxSearch = function() {
   this._inboxFilter = 'todas';
-  this._inboxSearch = '';
+  this._inboxSearch = document.getElementById('inboxSearch') ? document.getElementById('inboxSearch').value : '';
   this._selectedConversa = null;
   this._renderInboxLayout();
 };

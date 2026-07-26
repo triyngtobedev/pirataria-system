@@ -174,7 +174,7 @@ App._renderAIMemoria = function(el) {
     html += '</div></div>';
   }
 
-  el.innerHTML = html + '<div style="margin-top:16px;"><button class="btn btn-sm btn-danger" onclick="MemoriaOperacional.reset();App._renderAIMemoria(document.getElementById('aiContent'))">Resetar mem\u00f3ria</button></div>';
+  el.innerHTML = html + '<div style="margin-top:16px;"><button class="btn btn-sm btn-danger" onclick="MemoriaOperacional.reset();App._renderAIMemoria(document.getElementById(\'aiContent\'))">Resetar mem\u00f3ria</button></div>';
 };
 
 App._renderAPlaybooks = function(el) {

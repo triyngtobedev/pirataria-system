@@ -1,5 +1,3 @@
-App._pacFilter = { search: '', service: '', status: '' };
-
 App.renderPacotes = function() {
   const el = document.getElementById('moduleContent');
   const list = DB.getPacotes();
@@ -65,7 +63,7 @@ App._viewPacote = function(id) {
       <div class="os-detail-row"><span class="os-detail-label">Serviço</span><span class="os-detail-value">${App._esc(p.service)}</span></div>
       <div class="os-detail-row"><span class="os-detail-label">Sessões</span><span class="os-detail-value">${p.usedQty || 0} / ${p.totalQty}</span></div>
       <div class="os-detail-row"><span class="os-detail-label">Restantes</span><span class="os-detail-value">${p.remainingQty || 0}</span></div>
-      <div class="os-detail-row"><span class="os-detail-label">Status</span><span class="os-detail-value">${statusLabels[p.status] || p.status}</span></div>
+      <div class="os-detail-row"><span class="os-detail-label">Status</span><span class="os-detail-value">${({ ativo: 'Ativo', concluido: 'Conclu\u00eddo', cancelado: 'Cancelado', expirado: 'Expirado' })[p.status] || p.status}</span></div>
     </div>
     <div style="margin-top:14px;"><div class="panel-section-title">Histórico</div>${history}</div>
     <div class="overlay-actions" style="margin-top:14px;"><button class="btn" onclick="App._closeOverlay()">Fechar</button></div>

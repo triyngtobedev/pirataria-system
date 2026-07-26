@@ -101,7 +101,7 @@ const Reports = {
 
   // ─── Clientes ───
   clientMetrics(range) {
-    const { start, end } = this._dateRangeToFn(range)();
+    const { start, end } = this._resolveRange(range);
     const clients = DB.getClients();
     const history = DB._get('historico').filter(h => this._inRange(h.date, start, end));
     const servicedIds = new Set(history.map(h => h.clientId));
@@ -129,7 +129,7 @@ const Reports = {
 
   // ─── Agenda ───
   agendaRates(range) {
-    const { start, end } = this._dateRangeToFn(range)();
+    const { start, end } = this._resolveRange(range);
     const apps = DB.getAppointments().filter(a => this._inRange(a.date, start, end));
     const total = apps.length;
     if (total === 0) return { completionRate: 0, cancelRate: 0, pendingRate: 0, total };

@@ -127,7 +127,7 @@ App._renderWeek = function() {
     if (dayApps.length) {
       dayApps.forEach(a => {
         grid += `<div class="wg-card ${a.status}" onclick="event.stopPropagation();App.editAppointment('${a.id}')">
-          <div class="wg-time">${a.time}${a.duration ? ' (' + a.duration + '\')' : ''}</div>
+          <div class="wg-time">${a.time}${a.duration ? ' (' + a.duration + ' min)' : ''}</div>
           <div class="wg-client">${this._esc(a.clientName)}</div>
           <div class="wg-service">${this._esc(a.service)}</div>
           <div class="wg-prof">${Repos.studio.professionals.label(a.professional)}</div>
@@ -271,36 +271,36 @@ App.addAppointment = function() {
     { id: 'agendaDuration', rules: ['required', 'duration'], label: 'Duração' },
   ])) return;
 
-  if (sel.value === '__new__') {
-    const name = document.getElementById('agendaNewName').value.trim();
-    if (!name) { Validation._showError('agendaNewName', 'Nome é obrigatório.'); return; }
-    const c = Repos.clientes.create({ name, phone: document.getElementById('agendaNewPhone').value.trim(), interest: document.getElementById('agendaService').value });
+  var clientId = sel.value;
+  var clientName = '';
+
+  if (clientId === '__new__') {
+    var newName = document.getElementById('agendaNewName').value.trim();
+    if (!newName) { Validation._showError('agendaNewName', 'Nome é obrigatório.'); return; }
+    var c = Repos.clientes.create({ name: newName, phone: document.getElementById('agendaNewPhone').value.trim(), interest: document.getElementById('agendaService').value });
     Events.emit('crm.cliente_criado', { clientId: c.id });
-    Repos.agenda.create({
-      clientId: c.id, clientName: c.name,
-      date: document.getElementById('agendaDate').value,
-      time: document.getElementById('agendaTime').value,
-      duration: document.getElementById('agendaDuration').value,
-      service: document.getElementById('agendaService').value,
-      professional: document.getElementById('agendaProfessional').value,
-      notes: document.getElementById('agendaNotes').value.trim()
-    });
-    Events.emit('crm.agendamento_criado', { clientId: c.id, service: document.getElementById('agendaService').value, refId: null });
-    const c = Repos.clientes.get(sel.value);
-    if (!c) return;
-    Repos.agenda.create({
-      clientId: c.id, clientName: c.name,
-      date: document.getElementById('agendaDate').value,
-      time: document.getElementById('agendaTime').value,
-      duration: document.getElementById('agendaDuration').value,
-      service: document.getElementById('agendaService').value,
-      professional: document.getElementById('agendaProfessional').value,
-      notes: document.getElementById('agendaNotes').value.trim()
-    });
-    Events.emit('crm.agendamento_criado', { clientId: c.id, service: document.getElementById('agendaService').value, refId: null });
+    clientId = c.id;
+    clientName = c.name;
+  } else {
+    var existing = Repos.clientes.get(clientId);
+    if (existing) clientName = existing.name;
   }
+
+  if (!clientName) return;
+
+  var newAppt = Repos.agenda.create({
+    clientId: clientId, clientName: clientName,
+    date: document.getElementById('agendaDate').value,
+    time: document.getElementById('agendaTime').value,
+    duration: document.getElementById('agendaDuration').value,
+    service: document.getElementById('agendaService').value,
+    professional: document.getElementById('agendaProfessional').value,
+    notes: document.getElementById('agendaNotes').value.trim()
+  });
+  if (!newAppt) return;
+  Events.emit('crm.agendamento_criado', { clientId: clientId, service: document.getElementById('agendaService').value, refId: newAppt.id });
   this._closeOverlay();
-  Audit.action('create', 'agenda', '', 'Agendamento criado para ' + (Repos.agenda.list().slice(-1)[0] || {}).clientName);
+  Audit.action('create', 'agenda', newAppt ? newAppt.id : '', 'Agendamento criado para ' + clientName);
   App._toast('Agendamento criado com sucesso.', 'success');
   this.renderAgenda();
   EventBus.emit('meudia.updated');

@@ -93,7 +93,7 @@ const Confirmacao = {
       });
     }
 
-    results.sort(function(a, b) { return a.prioridade - b.prioridade || a.date - b.date; });
+    results.sort(function(a, b) { return a.prioridade - b.prioridade || (a.date > b.date ? 1 : -1); });
     return results;
   },
 

@@ -5,6 +5,7 @@ const App = {
   _focusedDay: null,
   _profFilter: 'todos',
   _panelClientId: null,
+  _isFirstAccess: false,
 
   init() {
     Migrations.run();
@@ -221,6 +222,36 @@ const App = {
     Repos.studio.settings.save(data);
     this._closeOverlay();
     App._toast('Est\u00fadio configurado com sucesso!', 'success');
+  },
+
+  _gerarComissao: function(professional, type, refId, description, operationValue) {
+    if (!professional || !operationValue || operationValue <= 0) return null;
+    var pct = Repos.studio.professionals.commission(professional);
+    if (!pct || pct <= 0) return null;
+    return Repos.comissoes.create({
+      professional: professional,
+      type: type,
+      refId: refId,
+      description: description,
+      operationValue: operationValue,
+      percent: pct,
+      commissionValue: operationValue * (pct / 100),
+      operationDate: DB._today(),
+    });
+  },
+
+  _checkPacoteEUsar: function(clientId, service, refId, professional, callback) {
+    if (!clientId || !service) { if (callback) callback(); return; }
+    try {
+      var pacotes = Repos.pacotes.activeByClientAndService(clientId, service);
+      if (pacotes.length > 0) {
+        var result = Repos.pacotes.use(clientId, service, refId, professional);
+        if (result && result.used) {
+          App._toast('Uso de pacote registrado: ' + result.pacote.remainingQty + ' sessões restantes.', 'info');
+        }
+      }
+    } catch(e) {}
+    if (callback) callback();
   },
 
   _showFechamentoResumo: function(resumo) {

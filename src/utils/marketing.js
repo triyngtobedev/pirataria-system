@@ -65,7 +65,7 @@ const Marketing = {
       if (c.status === 'ideia' && c.dataPrevista && c.dataPrevista > today) continue;
       if (c.status === 'ideia' && !c.dataPrevista) {
         resultados.push({ id: 'mkt_' + c.id, icon: '\uD83D\uDCA1', title: 'Ideia: ' + c.titulo, desc: (c.descricao || '').substring(0, 60), prioridade: 3, modulo: 'marketing', refId: c.id, btnLabel: 'Planejar', btnAction: "App.navigate('marketing')", clientName: '', badge: null, badgeType: null });
-        return;
+        continue;
       }
       if (!c.dataPrevista) continue;
 

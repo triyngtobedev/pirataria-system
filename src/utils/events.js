@@ -20,6 +20,7 @@ const Events = {
         try { Audit.action('event_error', 'system', event, 'Erro no handler: ' + err.message); } catch {}
       }
     }
+    EventBus.emit(event, data || {});
   },
 
   clear(event) {

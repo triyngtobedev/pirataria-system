@@ -83,9 +83,7 @@ const Onboarding = {
       });
     }
 
-    if (s.businessHours) {
-      Repos.studio.settings.save({ businessHours: s.businessHours });
-    }
+    // businessHours j\u00e1 foi salvo junto com os dados do est\u00fadio acima
 
     // Profissionais
     if (s.profissionais && s.profissionais.length > 0) {

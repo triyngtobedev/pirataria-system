@@ -14,8 +14,12 @@ const AgendamentoAssistente = {
     var horaAbertura = 10;
     var horaFechamento = 19;
     try { if (settings.businessHours) {
-      var match = settings.businessHours.match(/(\d+)/g);
-      if (match && match.length >= 2) { horaAbertura = parseInt(match[0]); horaFechamento = parseInt(match[1]); }
+      var match = settings.businessHours.match(/(\d{1,2})(?::\d{2})?\s*(?:h)?\s*(?:[-a\s])+\s*(\d{1,2})(?::\d{2})/i);
+      if (match && match.length >= 3) { horaAbertura = parseInt(match[1]); horaFechamento = parseInt(match[2]); }
+      else {
+        var digits = settings.businessHours.match(/(\d+)/g);
+        if (digits && digits.length >= 2) { horaAbertura = parseInt(digits[0]); horaFechamento = parseInt(digits[1]); }
+      }
     }} catch(e) {}
 
     var duracao = 60;

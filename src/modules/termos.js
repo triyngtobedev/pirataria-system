@@ -1,5 +1,3 @@
-App._termoFilter = { search: '', procedure: '', professional: '', status: '' };
-
 App.renderTermos = function() {
   const el = document.getElementById('moduleContent');
   const termos = DB.getTermos();

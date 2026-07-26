@@ -85,9 +85,13 @@ const Backup = {
         App._confirm(summary, function() {
           DB.importAll(content.collections);
           localStorage.removeItem('pirataria_schema_version');
-          const r = Migrations.run();
-          App._toast('Dados restaurados com sucesso.' + (r.count > 0 ? ' ' + r.count + ' migração(ões) aplicada(s).' : ''), 'success');
-          if (onComplete) onComplete();
+          Migrations.run().then(function(r) {
+            App._toast('Dados restaurados com sucesso.' + (r.count > 0 ? ' ' + r.count + ' migração(ões) aplicada(s).' : ''), 'success');
+            if (onComplete) onComplete();
+          }).catch(function() {
+            App._toast('Dados restaurados, mas migrações não puderam ser aplicadas.', 'warning');
+            if (onComplete) onComplete();
+          });
         });
       } catch (err) {
         App._hideLoading();

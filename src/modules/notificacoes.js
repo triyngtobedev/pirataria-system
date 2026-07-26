@@ -80,7 +80,7 @@ App._renderNotifItem = function(n) {
 };
 
 App._renderNotifItemRead = function(id) {
-  var el = document.querySelector('.notif-item-naolida');
+  var el = document.querySelector('.notif-item[onclick*="' + id + '"]') || document.querySelector('.notif-item-naolida');
   if (el) el.classList.remove('notif-item-naolida');
   Notificacao._updateBadge();
 };

@@ -16,7 +16,7 @@ const EventBus = {
     var handlers = this._listeners[evento] || [];
     for (var i = 0; i < handlers.length; i++) {
       try { handlers[i](payload || {}); } catch (err) {
-        try { console.warn('EventBus error:', evento, err.message); } catch(e) {}
+        try { Audit.action('event_error', 'eventbus', evento, 'Erro no handler: ' + err.message); } catch(e) {}
       }
     }
   },

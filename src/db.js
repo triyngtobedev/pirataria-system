@@ -490,7 +490,6 @@ const DB = {
   _updateCashierBalance(id, amount) { const list = this._get('caixas'); const i = list.findIndex(c => c.id === id); if (i === -1) return; list[i].currentBalance = (parseFloat(list[i].currentBalance) || 0) + amount; this._set('caixas', list); },
 
   // ─── Ordem de Serviço ───
-  _osCounter: 0,
   _nextOsNumber() {
     const all = this._get('ordensServico');
     const max = all.reduce((m, o) => Math.max(m, parseInt(o.osNumber, 10) || 0), 0);

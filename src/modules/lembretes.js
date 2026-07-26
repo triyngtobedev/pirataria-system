@@ -1,5 +1,3 @@
-App._lemFilter = { status: '', priority: '', search: '' };
-
 App.renderLembretes = function() {
   const el = document.getElementById('moduleContent');
   const list = DB.getLembretes();

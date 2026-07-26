@@ -67,8 +67,8 @@ App._addProduct = function() {
   const name = document.getElementById('pName').value.trim();
   if (!name) return;
   const stock = parseInt(document.getElementById('pStock').value) || 0;
-  Repos.produtos.create({ name, category: document.getElementById('pCategory').value, sku: document.getElementById('pSku').value.trim(), costPrice: document.getElementById('pCost').value.trim(), salePrice: document.getElementById('pPrice').value.trim(), stock, minStock: document.getElementById('pMinStock').value, notes: document.getElementById('pNotes').value.trim() });
-  if (stock > 0) Repos.produtos.movements.create({ productId: Repos.produtos.list().slice(-1)[0].id, type: 'entrada', qty: stock, reason: 'Estoque inicial' });
+  const product = Repos.produtos.create({ name, category: document.getElementById('pCategory').value, sku: document.getElementById('pSku').value.trim(), costPrice: document.getElementById('pCost').value.trim(), salePrice: document.getElementById('pPrice').value.trim(), stock, minStock: document.getElementById('pMinStock').value, notes: document.getElementById('pNotes').value.trim() });
+  if (stock > 0 && product) Repos.produtos.movements.create({ productId: product.id, type: 'entrada', qty: stock, reason: 'Estoque inicial' });
   this._closeOverlay(); this.renderEstoque();
 };
 

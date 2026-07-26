@@ -26,6 +26,11 @@ App._esc = function(s) {
   return d.innerHTML;
 };
 
+App._escJs = function(s) {
+  if (!s) return '';
+  return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/</g, '\\x3C').replace(/>/g, '\\x3E').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+};
+
 App._showOverlay = function(title, bodyHtml) {
   const overlay = document.getElementById('overlay');
   document.getElementById('overlayTitle').textContent = title;

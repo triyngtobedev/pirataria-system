@@ -4,8 +4,12 @@ const Capacidade = {
     var abertura = 10, fechamento = 19;
     try {
       if (settings.businessHours) {
-        var match = settings.businessHours.match(/(\d+)/g);
-        if (match && match.length >= 2) { abertura = parseInt(match[0]); fechamento = parseInt(match[1]); }
+        var match = settings.businessHours.match(/(\d{1,2})(?::\d{2})?\s*(?:h)?\s*(?:[-a\s])+\s*(\d{1,2})(?::\d{2})/i);
+        if (match && match.length >= 3) { abertura = parseInt(match[1]); fechamento = parseInt(match[2]); }
+        else {
+          var digits = settings.businessHours.match(/(\d+)/g);
+          if (digits && digits.length >= 2) { abertura = parseInt(digits[0]); fechamento = parseInt(digits[1]); }
+        }
       }
     } catch(e) {}
     return { abertura: abertura, fechamento: fechamento, totalHoras: fechamento - abertura };

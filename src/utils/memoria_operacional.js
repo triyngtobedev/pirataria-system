@@ -44,9 +44,10 @@ const MemoriaOperacional = {
     }
     if (evento === 'finance.payment.received' && payload) {
       var hoje = DB._today();
-      m.faturamentoDiario[hoje] = (m.faturamentoDiario[hoje] || 0) + (parseFloat(payload.value) || 0);
+      var valor = parseFloat(String(payload.value).replace(/[R$\s.]/g, '').replace(',', '.')) || 0;
+      m.faturamentoDiario[hoje] = (m.faturamentoDiario[hoje] || 0) + valor;
       if (payload.clientId && m.clientes[payload.clientId]) {
-        m.clientes[payload.clientId].totalGasto = (m.clientes[payload.clientId].totalGasto || 0) + (parseFloat(payload.value) || 0);
+        m.clientes[payload.clientId].totalGasto = (m.clientes[payload.clientId].totalGasto || 0) + valor;
         m.clientes[payload.clientId].visitas = (m.clientes[payload.clientId].visitas || 0) + 1;
       }
     }

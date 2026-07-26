@@ -23,7 +23,10 @@ App._doNavigate = function(module) {
   this.currentModule = module;
 
   document.querySelectorAll('[data-module]').forEach(function(a) {
-    a.classList.toggle('active', a.dataset.module === module);
+    var isActive = a.dataset.module === module;
+    a.classList.toggle('active', isActive);
+    if (isActive) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
   });
 
   document.getElementById('moduleTitle').textContent = MODULE_TITLES[module] || 'Dashboard';

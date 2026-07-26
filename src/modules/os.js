@@ -1,5 +1,3 @@
-App._osFilter = { status: '', period: '', professional: '', search: '' };
-
 App.renderOS = function() {
   const el = document.getElementById('moduleContent');
   const ordens = DB.getOrdensServico();

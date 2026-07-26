@@ -2,7 +2,14 @@ const Auth = {
   SESSION_KEY: 'pirataria_session',
 
   _hash(pw) {
-    return btoa(pw);
+    var hash = 0;
+    if (!pw) return '';
+    for (var i = 0; i < pw.length; i++) {
+      var char = pw.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash |= 0;
+    }
+    return 'h_' + Math.abs(hash).toString(36);
   },
 
   init() {

@@ -100,20 +100,22 @@ const Pendencias = {
     try {
       var conversas = DB.getConversas();
       conversas.forEach(function(c) {
-        if (!c.preAgendamento || c.preAgendamento.status !== 'rascunho') return;
+        var preAg = null;
+        try { preAg = (typeof c.preAgendamento === 'string') ? JSON.parse(c.preAgendamento) : c.preAgendamento; } catch(e) { preAg = null; }
+        if (!preAg || preAg.status !== 'rascunho') return;
         var pendId = 'pre_' + c.id;
         var isResolvida = acoes[pendId] && acoes[pendId].some(function(a) { return a.tipo === 'concluir' || a.tipo === 'adiar'; });
         if (isResolvida) return;
-        var ctx = { ultimaInteracao: c.ultimaInteracao, agendamentoHoje: c.preAgendamento.data === hoje };
+        var ctx = { ultimaInteracao: c.ultimaInteracao, agendamentoHoje: preAg.data === hoje };
         var prio = Prioritizacao.calcular('pre_agendamento', ctx);
         items.push({
           id: pendId, tipo: 'pre_agendamento', tipoLabel: 'Pr\u00e9-agendamento',
           cliente: c.clientName, clienteId: c.clientId || '',
           origem: 'Conversas',
           prioridade: prio.prioridade, score: prio.score, motivos: prio.motivos,
-          data: c.preAgendamento.data || c.ultimaInteracao || hoje,
+          data: preAg.data || c.ultimaInteracao || hoje,
           tempoEmAberto: Pendencias._getTempoAberto(c.ultimaInteracao),
-          responsavel: c.preAgendamento.profissional || '', acaoTipo: 'pre_agendamento', acaoPayload: { conversaId: c.id },
+          responsavel: preAg.profissional || '', acaoTipo: 'pre_agendamento', acaoPayload: { conversaId: c.id },
           itemOriginal: c
         });
       });

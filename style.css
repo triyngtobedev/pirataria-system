@@ -71,6 +71,89 @@
 
   /* ─── Transição ─── */
   --transition: 0.15s ease;
+  --transition-slow: 0.3s ease;
+  --line-height-base: 1.5;
+
+  /* ─── Layout de componentes ─── */
+  --header-margin-bottom: 18px;
+  --header-border-bottom: 1px solid var(--color-border);
+  --header-title-font-size: 1.1rem;
+  --section-margin-bottom: 22px;
+  --section-title-font-size: 0.72rem;
+  --section-title-letter-spacing: 0.07em;
+
+  /* ─── Card ─── */
+  --card-border-radius: var(--radius-md);
+  --card-padding: 20px;
+  --card-margin-bottom: 18px;
+
+  /* ─── Label ─── */
+  --label-font-size: 0.68rem;
+  --label-letter-spacing: 0.06em;
+
+  /* ─── Input ─── */
+  --input-border-radius: var(--radius-sm);
+  --input-padding: 8px 10px;
+  --input-font-size: 0.84rem;
+  --input-focus-border: var(--color-gold-dim);
+  --input-focus-shadow: 0 0 0 2px var(--color-gold-dim-2);
+  --input-placeholder-color: var(--color-text-dim);
+
+  /* ─── Button ─── */
+  --btn-gap: 6px;
+  --btn-border-width: 1px;
+  --btn-border-radius: var(--radius-sm);
+  --btn-padding: 8px 16px;
+  --btn-font-size: 0.78rem;
+  --btn-padding-sm: 5px 12px;
+  --btn-font-size-sm: 0.72rem;
+
+  /* ─── Table ─── */
+  --table-header-font-size: 0.68rem;
+  --table-header-padding: 10px 12px;
+  --table-cell-font-size: 0.84rem;
+  --table-cell-padding: 10px 12px;
+  --table-row-hover: rgba(255, 255, 255, 0.02);
+
+  /* ─── Badge ─── */
+  --badge-font-weight: 600;
+  --badge-padding: 2px 8px;
+  --badge-border-radius: 3px;
+  --badge-letter-spacing: 0.04em;
+  --badge-scheduled-bg: rgba(184, 134, 11, 0.15);
+  --badge-scheduled-text: var(--color-yellow);
+  --badge-confirmed-bg: var(--color-accent-dim);
+  --badge-confirmed-text: var(--color-accent-hover);
+  --badge-completed-bg: var(--color-green-dim);
+  --badge-completed-text: var(--color-green);
+  --badge-cancelled-bg: rgba(107, 114, 128, 0.15);
+  --badge-cancelled-text: var(--color-text-dim);
+  --badge-waiting-bg: rgba(251, 191, 36, 0.15);
+  --badge-waiting-text: #fbbf24;
+  --badge-progress-bg: rgba(59, 130, 246, 0.15);
+  --badge-progress-text: #60a5fa;
+
+  /* ─── Modal / Overlay ─── */
+  --modal-bg: var(--color-surface);
+  --modal-border: 1px solid var(--color-border);
+  --modal-border-radius: var(--radius-lg);
+  --modal-padding: 24px;
+  --modal-min-width: 360px;
+  --modal-max-width: 560px;
+  --modal-max-height: 80vh;
+
+  /* ─── Grid ─── */
+  --grid-gap-sm: 8px;
+  --grid-gap-md: 12px;
+  --grid-min-col: 140px;
+
+  /* ─── Spacing scale (4px base) ─── */
+  --space-3: 12px;
+  --space-4: 16px;
+
+  /* ─── Misc ─── */
+  --surface-hover: rgba(255, 255, 255, 0.025);
+  --bg-inset: var(--color-surface-2);
 
   /*
     ─── ALIASES DE COMPATIBILIDADE (código legado usa estes nomes) ───
@@ -104,6 +187,7 @@
   --input-bg: var(--color-bg);
   --input-border: 1px solid var(--color-border);
   --modal-overlay-bg: rgba(0, 0, 0, 0.65);
+
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -125,6 +209,8 @@ a { color: var(--color-gold); text-decoration: none; }
 a:hover { color: var(--color-gold-light); }
 
 ::selection { background: var(--color-gold-dim-2); color: var(--color-gold-light); }
+:focus-visible { outline: 2px solid var(--color-gold); outline-offset: 2px; }
+button:focus:not(:focus-visible), input:focus:not(:focus-visible), select:focus:not(:focus-visible), textarea:focus:not(:focus-visible) { outline: none; }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--color-bg); }
 ::-webkit-scrollbar-thumb { background: var(--color-border-light); border-radius: var(--radius-sm); }

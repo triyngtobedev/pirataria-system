@@ -37,7 +37,7 @@ const Fila = {
     DB.getOrcamentos().forEach(function(o) {
       if (o.status !== 'enviado' && o.status !== 'visualizado' && o.status !== 'em_negociacao') return;
       var score = 60;
-      var motivos = ['Or\u00e7amento ' + this._statusLabel(o.status)];
+      var motivos = ['Or\u00e7amento ' + Fila._statusLabel(o.status)];
 
       if (o.validade && o.validade < hoje) { score += 20; motivos.push('Validade expirada'); }
       else if (o.validade) {

@@ -1,5 +1,3 @@
-App._valeFilter = { search: '', status: '' };
-
 App.renderVales = function() {
   const el = document.getElementById('moduleContent');
   const vales = DB.getVales();

@@ -1,5 +1,3 @@
-App._comFilter = { professional: '', status: '', type: '' };
-
 App.renderComissoes = function() {
   const el = document.getElementById('moduleContent');
   const profs = Repos.studio.professionals.active();

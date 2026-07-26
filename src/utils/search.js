@@ -34,7 +34,7 @@ const Search = {
         .map(a => ({
           id: a.id, module: 'atendimento',
           label: a.clientName + ' — ' + (a.service || ''),
-          sub: a.time + ' · ' + (STATUS_LABELS[a.status] || a.status),
+          sub: a.time + ' · ' + ({ confirmed: 'Confirmado', pending: 'Pendente', completed: 'Concluído', cancelled: 'Cancelado' }[a.status] || a.status),
           searchFields: [a.clientName, a.service, a.status],
         }))
         .concat(
@@ -45,7 +45,7 @@ const Search = {
             searchFields: [q.clientName, q.service, q.status],
           }))
         ),
-      conhecimento: DB.searchKB(text).map(a => ({
+      conhecimento: DB.searchKB(text || '').map(a => ({
         id: a.id, module: 'conhecimento',
         label: a.titulo,
         sub: (a.categoria || '') + ' — ' + (a.resumo || '').substring(0, 80),
